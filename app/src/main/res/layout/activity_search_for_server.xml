@@ -1,0 +1,78 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="nu.nldv.uppackaren.SearchForServerActivity">
+
+
+    <ListView
+        android:id="@+id/search_for_server_scan_result_listview"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/search_for_server_add_manually_container" />
+
+    <ProgressBar
+        android:id="@+id/search_for_server_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:indeterminate="true"
+        style="@android:style/Widget.ProgressBar.Large"/>
+
+    <Button
+        android:id="@+id/search_for_server_start_scan_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:onClick="startScan"
+        android:text="@string/start_scan" />
+
+    <Button
+        android:id="@+id/search_for_server_add_manually_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:onClick="showManualContainer"
+        android:text="@string/add_manually"/>
+    <RelativeLayout
+        android:id="@+id/search_for_server_add_manually_container"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+
+        <TextView
+            android:id="@+id/search_for_server_add_manually_heading"
+            style="@style/Heading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:text="@string/add_manually" />
+
+        <EditText
+            android:id="@+id/search_for_server_add_manually_edittext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/search_for_server_add_manually_heading"
+            android:layout_toStartOf="@+id/search_for_server_add_manually_ok_button"
+            android:hint="@string/server_uri_hint"
+            android:inputType="text" />
+
+        <Button
+            android:id="@+id/search_for_server_add_manually_ok_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/search_for_server_add_manually_edittext"
+            android:layout_alignParentEnd="true"
+            android:onClick="okManual"
+            android:text="@string/ok" />
+    </RelativeLayout>
+
+</RelativeLayout>

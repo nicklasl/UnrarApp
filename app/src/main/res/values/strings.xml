@@ -9,4 +9,8 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="server_uri_hint">http://[serverUri]:[port]</string>
+    <string name="title_activity_search_for_server">Search for server</string>
+    <string name="add_manually">Add manually</string>
+    <string name="scan_network_for_server">Scan for server</string>
+    <string name="start_scan">Start scan</string>
 </resources>

@@ -1,13 +1,10 @@
 package nu.nldv.uppackaren;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -19,25 +16,39 @@ import nu.nldv.uppackaren.model.RarArchive;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
-import roboguice.activity.RoboListActivity;
 import roboguice.inject.ContentView;
 import roboguice.inject.InjectView;
 
 
 @ContentView(R.layout.activity_main)
-public class MainActivity extends RoboListActivity {
+public class MainActivity extends BaseActivity {
 
     @InjectView(R.id.loader)
     ProgressBar loader;
+    @InjectView(R.id.listview)
+    ListView listView;
 
     private List<RarArchive> list;
     private RarArchiveArrayAdapter adapter;
 
+
     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        adapter = new RarArchiveArrayAdapter(this, R.layout.row_layout, new ArrayList<RarArchive>());
+        listView.setAdapter(adapter);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (serverUriIsSet()) loadData();
+        else setServerUri();
+    }
+
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
         RarArchive rarArchive = list.get(position);
-        ((UppackarenApplication) getApplication()).restApi().unRar(rarArchive.getId(), new Callback<String>() {
+        getRestAPI().unRar(rarArchive.getId(), new Callback<String>() {
             @Override
             public void success(String s, Response response) {
                 Toast.makeText(getApplicationContext(), "Successfully unrared " + s, Toast.LENGTH_SHORT).show();
@@ -73,55 +84,14 @@ public class MainActivity extends RoboListActivity {
     }
 
     private void setServerUri() {
-        View alertDialogLayout = getLayoutInflater().inflate(R.layout.set_server_uri_layout, null);
-        final EditText editText = (EditText) alertDialogLayout.findViewById(R.id.server_uri_edittext);
-        if (sharedPrefs().contains(UppackarenApplication.UPPACKAREN_SERVER_URI)) {
-            editText.setText(sharedPrefs().getString(UppackarenApplication.UPPACKAREN_SERVER_URI, "not set"));
-        }
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.action_server_uri)
-                .setView(alertDialogLayout)
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String serverUri = editText.getText().toString();
-                        sharedPrefs().edit().putString(UppackarenApplication.UPPACKAREN_SERVER_URI, serverUri).commit();
-                        ((UppackarenApplication) getApplication()).resetRestApi();
-                        dialog.dismiss();
-                        loadData();
-                    }
-                }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        }).show();
+        Intent startSearchForServerActivity = new Intent(this, SearchForServerActivity.class);
+        startActivity(startSearchForServerActivity);
     }
 
-    private SharedPreferences sharedPrefs() {
-        return getSharedPreferences(UppackarenApplication.UPPACKAREN, MODE_PRIVATE);
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        adapter = new RarArchiveArrayAdapter(this, R.layout.row_layout, new ArrayList<RarArchive>());
-        setListAdapter(adapter);
-        if (serverUriIsSet()) {
-            loadData();
-        } else {
-            setServerUri();
-        }
-    }
-
-    private boolean serverUriIsSet() {
-        SharedPreferences sharedPreferences = sharedPrefs();
-        return sharedPreferences.contains(UppackarenApplication.UPPACKAREN_SERVER_URI);
-    }
 
     private void loadData() {
         loader.setVisibility(View.VISIBLE);
-        ((UppackarenApplication) getApplication()).restApi().getRarArchives(new Callback<List<RarArchive>>() {
+        getRestAPI().getRarArchives(new Callback<List<RarArchive>>() {
             @Override
             public void success(List<RarArchive> rarArchives, Response response) {
                 list = rarArchives;
