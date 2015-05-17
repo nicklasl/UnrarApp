@@ -2,6 +2,7 @@ package nu.nldv.uppackaren;
 
 import android.app.Application;
 
+import nu.nldv.uppackaren.util.RestAPI;
 import retrofit.RestAdapter;
 
 public class UppackarenApplication extends Application {

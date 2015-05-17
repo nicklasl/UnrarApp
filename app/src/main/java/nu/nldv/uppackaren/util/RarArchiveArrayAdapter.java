@@ -1,4 +1,4 @@
-package nu.nldv.uppackaren;
+package nu.nldv.uppackaren.util;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import nu.nldv.uppackaren.R;
 import nu.nldv.uppackaren.model.RarArchive;
 
 public class RarArchiveArrayAdapter extends ArrayAdapter<RarArchive> {

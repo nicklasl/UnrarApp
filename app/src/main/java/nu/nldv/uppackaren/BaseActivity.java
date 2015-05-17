@@ -2,6 +2,7 @@ package nu.nldv.uppackaren;
 
 import android.content.SharedPreferences;
 
+import nu.nldv.uppackaren.util.RestAPI;
 import roboguice.activity.RoboActivity;
 
 public class BaseActivity extends RoboActivity {
