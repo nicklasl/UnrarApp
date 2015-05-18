@@ -54,20 +54,24 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
         Collection<String> reacheableHosts = getReachableHosts();
 
         for (final String reacheableHost : reacheableHosts) {
-            RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setEndpoint("http://" + reacheableHost + ":" + port)
-                    .setLogLevel(RestAdapter.LogLevel.NONE)
-                    .build();
-            try {
-                restAdapter.create(RestAPI.class).getInfoSynchronous();
-                Log.d("Uppackaren", reacheableHost + ":" + port + " is supported");
-                availableServers.add(new Server(reacheableHost, port));
-            } catch (Exception e) {
-                Log.d("Uppackaren", reacheableHost + ":" + port + " is not supported");
-            }
+            checkHostSupport(port, availableServers, reacheableHost);
         }
 
         return availableServers;
+    }
+
+    private void checkHostSupport(Integer port, List<Server> availableServers, String reacheableHost) {
+        RestAdapter restAdapter = new RestAdapter.Builder()
+                .setEndpoint("http://" + reacheableHost + ":" + port)
+                .setLogLevel(RestAdapter.LogLevel.NONE)
+                .build();
+        try {
+            restAdapter.create(RestAPI.class).getInfoSynchronous();
+            Log.d("Uppackaren", reacheableHost + ":" + port + " is supported");
+            availableServers.add(new Server(reacheableHost, port));
+        } catch (Exception e) {
+            Log.d("Uppackaren", reacheableHost + ":" + port + " is not supported");
+        }
     }
 
     private Collection<String> getReachableHosts() throws IOException, InterruptedException {
