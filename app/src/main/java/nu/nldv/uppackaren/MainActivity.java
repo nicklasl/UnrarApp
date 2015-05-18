@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nu.nldv.uppackaren.model.RarArchive;
+import nu.nldv.uppackaren.model.UnrarResponse;
 import nu.nldv.uppackaren.util.RarArchiveArrayAdapter;
 import retrofit.Callback;
 import retrofit.RetrofitError;
@@ -100,15 +101,15 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         RarArchive rarArchive = list.get(position);
-        getRestAPI().unRar(rarArchive.getId(), new Callback<String>() {
+        getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
             @Override
-            public void success(String s, Response response) {
-                Toast.makeText(getApplicationContext(), "Successfully unrared " + s, Toast.LENGTH_SHORT).show();
+            public void success(UnrarResponse unrarResponse, Response response) {
+                Toast.makeText(getApplicationContext(), "Started to unrar to: " + unrarResponse.getFilePath(), Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void failure(RetrofitError error) {
-                Toast.makeText(getApplicationContext(), "Failed to unrar", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Failed to unrar", Toast.LENGTH_LONG).show();
 
             }
         });
