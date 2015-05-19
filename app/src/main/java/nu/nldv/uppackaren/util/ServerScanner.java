@@ -49,18 +49,13 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
     }
 
     private Collection<? extends Server> scanSubnetOnPort(final Integer port) throws IOException, InterruptedException {
-        final List<Server> availableServers = new ArrayList<>();
         long start = System.currentTimeMillis();
-        Collection<String> reacheableHosts = getReachableHosts();
-
-        for (final String reacheableHost : reacheableHosts) {
-            checkHostSupport(port, availableServers, reacheableHost);
-        }
-
+        Collection<Server> availableServers = getAvailableServers(port);
+        Log.i("Uppackaren", "The scanning took: " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         return availableServers;
     }
 
-    private void checkHostSupport(Integer port, List<Server> availableServers, String reacheableHost) {
+    private void checkHostSupport(Integer port, Map<Integer, Server> supportedServers, String reacheableHost) {
         RestAdapter restAdapter = new RestAdapter.Builder()
                 .setEndpoint("http://" + reacheableHost + ":" + port)
                 .setLogLevel(RestAdapter.LogLevel.NONE)
@@ -68,28 +63,16 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
         try {
             restAdapter.create(RestAPI.class).getInfoSynchronous();
             Log.d("Uppackaren", reacheableHost + ":" + port + " is supported");
-            availableServers.add(new Server(reacheableHost, port));
+            Server server = new Server(reacheableHost, port);
+            supportedServers.put(server.hashCode(), server);
         } catch (Exception e) {
             Log.d("Uppackaren", reacheableHost + ":" + port + " is not supported");
         }
     }
 
-    private Collection<String> getReachableHosts() throws IOException, InterruptedException {
-        final Map<Integer, String> reachable = new ConcurrentHashMap<>();
-        Map completedThreads = new ConcurrentHashMap();
-        List<Thread> threads = generateThreads(reachable, completedThreads);
-        for (Thread thread : threads) {
-            thread.start();
-        }
-
-        while (completedThreads.size() < NUMBER_OF_THREADS) {
-            Thread.sleep(100);
-        }
-        return reachable.values();
-    }
-
-    private List<Thread> generateThreads(final Map<Integer, String> reachable, final Map completedThreads) {
-        List<Thread> threads = new ArrayList<>();
+    private Collection<Server> getAvailableServers(final int port) throws IOException, InterruptedException {
+        final Map completedThreads = new ConcurrentHashMap();
+        final Map<Integer, Server> supported = new ConcurrentHashMap<>();
         int tick = MAX_IP / NUMBER_OF_THREADS;
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final int start = MIN_IP + (i * tick);
@@ -103,7 +86,7 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
                         try {
                             if (InetAddress.getByName(host).isReachable(TIMEOUT)) {
                                 Log.i("Uppackaren", host + " is reachable");
-                                reachable.put(host.hashCode(), host);
+                                checkHostSupport(port, supported, host);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -112,9 +95,13 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
                     completedThreads.put(this.hashCode(), new Object());
                 }
             });
-            threads.add(t);
+            t.start();
         }
-        return threads;
+
+        while (completedThreads.size() < NUMBER_OF_THREADS) {
+            Thread.sleep(100);
+        }
+        return supported.values();
     }
 
     @Override
