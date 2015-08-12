@@ -2,6 +2,8 @@ package nu.nldv.uppackaren;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nu.nldv.uppackaren.model.RarArchive;
+import nu.nldv.uppackaren.model.StatusResponse;
 import nu.nldv.uppackaren.model.UnrarResponse;
 import nu.nldv.uppackaren.util.RarArchiveArrayAdapter;
 import retrofit.Callback;
@@ -33,6 +36,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
 
     private List<RarArchive> list;
     private RarArchiveArrayAdapter adapter;
+    private Handler handler;
 
 
     @Override
@@ -42,6 +46,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
         adapter.clear();
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this);
+        handler = new Handler(Looper.getMainLooper());
     }
 
     @Override
@@ -99,12 +104,13 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        RarArchive rarArchive = list.get(position);
+    public void onItemClick(AdapterView<?> parent, final View view, final int position, long id) {
+        final RarArchive rarArchive = list.get(position);
         getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
             @Override
             public void success(UnrarResponse unrarResponse, Response response) {
                 Toast.makeText(getApplicationContext(), "Started to unrar to: " + unrarResponse.getFilePath(), Toast.LENGTH_LONG).show();
+                startPollingForProgress(view, rarArchive.getId());
             }
 
             @Override
@@ -113,5 +119,34 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
 
             }
         });
+    }
+
+    private void startPollingForProgress(View view, String id) {
+        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.percent_done);
+        progressBar.setVisibility(View.VISIBLE);
+        handler.postDelayed(fetchStatusAndUpdateProgress(id, progressBar), 2000);
+    }
+
+    private Runnable fetchStatusAndUpdateProgress(final String id, final ProgressBar progressBar) {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                getRestAPI().getStatus(id, new Callback<StatusResponse>() {
+
+                    @Override
+                    public void success(StatusResponse statusResponse, Response response) {
+                        progressBar.setProgress(statusResponse.getPercentDone());
+                        handler.postDelayed(fetchStatusAndUpdateProgress(id, progressBar), 2000);
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        progressBar.setVisibility(View.GONE);
+                        loadData();
+                    }
+                });
+            }
+        };
+        return runnable;
     }
 }
