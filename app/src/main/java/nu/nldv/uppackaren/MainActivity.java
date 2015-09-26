@@ -116,7 +116,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
             @Override
             public void failure(RetrofitError error) {
                 Toast.makeText(getApplicationContext(), "Failed to unrar", Toast.LENGTH_LONG).show();
-
             }
         });
     }
