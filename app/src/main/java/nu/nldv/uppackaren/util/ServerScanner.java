@@ -16,6 +16,7 @@ import retrofit.RestAdapter;
 
 public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
 
+    private static final String TAG = ServerScanner.class.getSimpleName();
     private final ServerScannerCallback callback;
     private final String subnet;
     private final static int MIN_IP = 1;
@@ -36,10 +37,10 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
                 try {
                     servers.addAll(scanSubnetOnPort(port));
                 } catch (IOException e) {
-                    Log.e("Uppackaren", e.getMessage());
+                    Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 } catch (InterruptedException e) {
-                    Log.e("Uppackaren", e.getMessage());
+                    Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -51,7 +52,7 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
     private Collection<? extends Server> scanSubnetOnPort(final Integer port) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
         Collection<Server> availableServers = getAvailableServers(port);
-        Log.i("Uppackaren", "The scanning took: " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+        Log.i(TAG, "The scanning took: " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         return availableServers;
     }
 
@@ -62,16 +63,16 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
                 .build();
         try {
             restAdapter.create(RestAPI.class).getInfoSynchronous();
-            Log.d("Uppackaren", reacheableHost + ":" + port + " is supported");
+            Log.d(TAG, reacheableHost + ":" + port + " is supported");
             Server server = new Server(reacheableHost, port);
             supportedServers.put(server.hashCode(), server);
         } catch (Exception e) {
-            Log.d("Uppackaren", reacheableHost + ":" + port + " is not supported");
+            Log.d(TAG, reacheableHost + ":" + port + " is not supported");
         }
     }
 
     private Collection<Server> getAvailableServers(final int port) throws IOException, InterruptedException {
-        final Map completedThreads = new ConcurrentHashMap();
+        final Map<Integer, Object> completedThreads = new ConcurrentHashMap<>();
         final Map<Integer, Server> supported = new ConcurrentHashMap<>();
         int tick = MAX_IP / NUMBER_OF_THREADS;
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
@@ -85,7 +86,7 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
                         String host = subnet + "." + j;
                         try {
                             if (InetAddress.getByName(host).isReachable(TIMEOUT)) {
-                                Log.i("Uppackaren", host + " is reachable");
+                                Log.i(TAG, host + " is reachable");
                                 checkHostSupport(port, supported, host);
                             }
                         } catch (IOException e) {
