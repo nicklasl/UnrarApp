@@ -8,6 +8,7 @@ import com.github.junrar.rarfile.FileHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
@@ -28,6 +29,7 @@ import nu.nldv.unroar.model.Completion;
 import nu.nldv.unroar.model.QueueItem;
 
 @Service
+@Scope(value = "singleton")
 public class Unrarer {
 
     private final Logger logger;
