@@ -8,13 +8,9 @@ public class QueueItem {
     private int id;
     private File dir;
 
-    @JsonIgnore
-    private Completion completion;
-
-    public QueueItem(File dir, Completion completion) {
+    public QueueItem(File dir) {
         this.id = dir.hashCode();
         this.dir = dir;
-        this.completion = completion;
     }
 
     public int getId() {
@@ -25,21 +21,12 @@ public class QueueItem {
         return dir;
     }
 
-    @JsonIgnore
-    public Completion getCompletion() {
-        return completion;
-    }
-
     public void setId(int id) {
         this.id = id;
     }
 
     public void setDir(File dir) {
         this.dir = dir;
-    }
-
-    public void setCompletion(Completion completion) {
-        this.completion = completion;
     }
 
     @Override

@@ -45,10 +45,10 @@ public class Unrarer {
         logger = LoggerFactory.getLogger(this.getClass());
     }
 
-    public int addFileToUnrarQueue(File dir, Completion completion) {
+    public int addFileToUnrarQueue(File dir) {
         assert (dir != null);
         assert (dir.isDirectory());
-        QueueItem queueItem = new QueueItem(dir, completion);
+        QueueItem queueItem = new QueueItem(dir);
         if (!getQueue().contains(queueItem)) {
             logger.info("Adding to queue: " + queueItem);
             getQueue().push(queueItem);
@@ -61,7 +61,7 @@ public class Unrarer {
 
     }
 
-    private String unrar(File dir, final Completion completion) {
+    private String unrar(File dir) {
         File rarFile = getRarFile(dir);
 
         Archive archive = null;
@@ -72,13 +72,12 @@ public class Unrarer {
         }
         if (archive != null) {
             final String resultPath = guessResultPath(archive.getFileHeaders().get(0));
-            final Completion completionBlockWithStopWorking = new Completion() {
+            taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
                 public void success() {
                     super.success();
                     logger.info("Successfully completed extracting " + resultPath);
                     setCurrentWork(null);
-                    completion.success();
                 }
 
                 @Override
@@ -86,10 +85,8 @@ public class Unrarer {
                     super.fail();
                     logger.info("Failed extracting " + resultPath);
                     setCurrentWork(null);
-                    completion.fail();
                 }
-            };
-            taskExecutor.execute(new HeavyLifting(archive, completionBlockWithStopWorking));
+            }));
             return resultPath;
         }
         return null;
@@ -164,7 +161,7 @@ public class Unrarer {
                 logger.info("Not working and there is something in queue... starting new work");
                 final QueueItem queueItem = getQueue().pop();
                 setCurrentWork(queueItem.getDir());
-                unrar(queueItem.getDir(), queueItem.getCompletion());
+                unrar(queueItem.getDir());
                 cancelFuture();
                 taskScheduler.schedule(peekInQueue, dateInSeconds(5));
             } else {

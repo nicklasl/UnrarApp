@@ -63,17 +63,7 @@ public class MainController {
             return new ResponseEntity<>(new UnrarResponseObject(0), HttpStatus.NOT_FOUND);
         }
 
-        int queueId = unrarer.addFileToUnrarQueue(dir, new Completion() {
-            @Override
-            public void success() {
-                super.success();
-            }
-
-            @Override
-            public void fail() {
-                super.fail();
-            }
-        });
+        int queueId = unrarer.addFileToUnrarQueue(dir);
         return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
     }
 
