@@ -1,7 +1,5 @@
 package nu.nldv.unroar.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.File;
 
 public class QueueItem {

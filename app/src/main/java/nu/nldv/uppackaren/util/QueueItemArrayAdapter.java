@@ -10,13 +10,12 @@ import android.widget.TextView;
 import java.util.List;
 
 import nu.nldv.uppackaren.R;
-import nu.nldv.uppackaren.model.RarArchive;
+import nu.nldv.uppackaren.model.QueueItem;
 
-public class RarArchiveArrayAdapter extends ArrayAdapter<RarArchive> {
+public class QueueItemArrayAdapter extends ArrayAdapter<QueueItem> {
 
-
-    public RarArchiveArrayAdapter(Context context, int resource, List<RarArchive> items) {
-        super(context, resource, items);
+    public QueueItemArrayAdapter(Context context, int rowResource, List<QueueItem> items) {
+        super(context, rowResource, items);
     }
 
     @Override
@@ -24,16 +23,13 @@ public class RarArchiveArrayAdapter extends ArrayAdapter<RarArchive> {
         View view = convertView;
         if (view == null) {
             LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            view = inflater.inflate(R.layout.row_layout, null);
+            view = inflater.inflate(R.layout.queue_row_layout, null);
         }
 
-        RarArchive item = getItem(position);
+        QueueItem item = getItem(position);
         if (item != null) {
-            TextView title = (TextView) view.findViewById(R.id.title_textview);
-            TextView right = (TextView) view.findViewById(R.id.number_of_files_textview);
-            title.setText(item.getName());
-
-            right.setText("~" + item.getDirSizeInMB() + " MB");
+            TextView title = (TextView) view.findViewById(R.id.queue_item_title);
+            title.setText(item.getDir());
         }
 
         return view;
