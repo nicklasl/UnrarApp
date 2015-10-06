@@ -1,10 +1,5 @@
 package nu.nldv.unroar;
 
-import nu.nldv.unroar.model.Completion;
-import nu.nldv.unroar.model.QueueItem;
-import nu.nldv.unroar.model.RarArchiveFolder;
-import nu.nldv.unroar.model.UnrarResponseObject;
-import nu.nldv.unroar.model.UnrarStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -12,12 +7,22 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import nu.nldv.unroar.model.QueueItem;
+import nu.nldv.unroar.model.RarArchiveFolder;
+import nu.nldv.unroar.model.UnrarResponseObject;
+import nu.nldv.unroar.model.UnrarStatus;
 
 @Controller
 @ComponentScan
@@ -46,7 +51,8 @@ public class MainController {
             for (File dir : files) {
                 if (dir.isDirectory()
                         && containsRarFiles(dir)
-                        && !alreadyUnpacked(dir, files)) {
+                        && !alreadyUnpacked(dir, files)
+                        && !inQueue(dir)) {
                     archiveFolders.add(new RarArchiveFolder(dir));
                 }
             }
@@ -54,6 +60,18 @@ public class MainController {
 
 
         return archiveFolders;
+    }
+
+    private boolean inQueue(File dir) {
+        boolean inQueue = false;
+        for (QueueItem qi : unrarer.getQueue()) {
+            if (qi.getDir().equals(dir)) {
+                inQueue = true;
+                break;
+            }
+        }
+
+        return inQueue || (unrarer.getCurrentWork() != null && unrarer.getCurrentWork().equals(dir));
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.POST)
@@ -130,7 +148,7 @@ public class MainController {
     }
 
     public static void main(String[] args) throws Exception {
-        if(args == null || args.length == 0) {
+        if (args == null || args.length == 0) {
             throw new IllegalArgumentException("Need to supply a directory when starting.");
         }
         path = args[0];
