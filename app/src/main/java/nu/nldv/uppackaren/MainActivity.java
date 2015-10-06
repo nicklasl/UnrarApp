@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -15,9 +16,11 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import nu.nldv.uppackaren.model.QueueItem;
 import nu.nldv.uppackaren.model.RarArchive;
 import nu.nldv.uppackaren.model.StatusResponse;
 import nu.nldv.uppackaren.model.UnrarResponse;
+import nu.nldv.uppackaren.util.QueueItemArrayAdapter;
 import nu.nldv.uppackaren.util.RarArchiveArrayAdapter;
 import retrofit.Callback;
 import retrofit.RetrofitError;
@@ -33,10 +36,19 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     ProgressBar loader;
     @InjectView(R.id.listview)
     ListView listView;
+    @InjectView(R.id.queue_listview)
+    ListView queueListView;
+    @InjectView(R.id.current_work_container)
+    ViewGroup currentWorkContainer;
+    @InjectView(R.id.current_work_progressbar)
+    ProgressBar currentWorkProgress;
+    @InjectView(R.id.queue_container)
+    ViewGroup queueContainer;
 
     private List<RarArchive> list;
     private RarArchiveArrayAdapter adapter;
     private Handler handler;
+    private QueueItemArrayAdapter queueAdapter;
 
 
     @Override
@@ -44,16 +56,18 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
         super.onCreate(savedInstanceState);
         adapter = new RarArchiveArrayAdapter(this, R.layout.row_layout, new ArrayList<RarArchive>());
         adapter.clear();
+        queueAdapter = new QueueItemArrayAdapter(this, R.layout.queue_row_layout, new ArrayList<QueueItem>());
+        queueAdapter.clear();
         listView.setAdapter(adapter);
+        queueListView.setAdapter(queueAdapter);
         listView.setOnItemClickListener(this);
         handler = new Handler(Looper.getMainLooper());
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (serverUriIsSet()) loadData();
-        else setServerUri();
+        if (serverUriIsSet()) {
+            loadData();
+        } else {
+            setServerUri();
+        }
     }
 
     @Override
@@ -98,9 +112,14 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
             @Override
             public void failure(RetrofitError error) {
                 loader.setVisibility(View.GONE);
-
             }
         });
+        startFetchingQueue();
+    }
+
+    private void startFetchingQueue() {
+        handler.removeCallbacks(fetchQueueRunnable);
+        handler.postDelayed(fetchQueueRunnable, 1000);
     }
 
     @Override
@@ -109,43 +128,70 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
         getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
             @Override
             public void success(UnrarResponse unrarResponse, Response response) {
-                Toast.makeText(getApplicationContext(), "Started to unrar to: " + unrarResponse.getFilePath(), Toast.LENGTH_LONG).show();
-                startPollingForProgress(view, rarArchive.getId());
+                Toast.makeText(getApplicationContext(), "Added " + unrarResponse.getQueueId() + " to queue.", Toast.LENGTH_SHORT).show();
+                list.remove(position);
+                adapter.remove(rarArchive);
+                adapter.notifyDataSetChanged();
+                startPollingForProgress();
+                startFetchingQueue();
             }
 
             @Override
             public void failure(RetrofitError error) {
-                Toast.makeText(getApplicationContext(), "Failed to unrar", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Failed to unrar", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void startPollingForProgress(View view, String id) {
-        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.percent_done);
-        progressBar.setVisibility(View.VISIBLE);
-        handler.postDelayed(fetchStatusAndUpdateProgress(id, progressBar), 2000);
+    private void startPollingForProgress() {
+        currentWorkContainer.setVisibility(View.VISIBLE);
+        handler.removeCallbacks(fetchStatusAndUpdateProgress);
+        handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
     }
 
-    private Runnable fetchStatusAndUpdateProgress(final String id, final ProgressBar progressBar) {
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                getRestAPI().getStatus(id, new Callback<StatusResponse>() {
-
-                    @Override
-                    public void success(StatusResponse statusResponse, Response response) {
-                        progressBar.setProgress(statusResponse.getPercentDone());
-                        handler.postDelayed(fetchStatusAndUpdateProgress(id, progressBar), 2000);
+    private Runnable fetchQueueRunnable = new Runnable() {
+        @Override
+        public void run() {
+            getRestAPI().getQueue(new Callback<List<QueueItem>>() {
+                @Override
+                public void success(List<QueueItem> queueItems, Response response) {
+                    queueAdapter.clear();
+                    queueAdapter.addAll(queueItems);
+                    queueAdapter.notifyDataSetChanged();
+                    if (queueItems.isEmpty()) {
+                        queueContainer.setVisibility(View.GONE);
+                    } else {
+                        queueContainer.setVisibility(View.VISIBLE);
+                        handler.postDelayed(fetchQueueRunnable, 1000);
+                        startPollingForProgress();
                     }
+                }
 
-                    @Override
-                    public void failure(RetrofitError error) {
-                        progressBar.setVisibility(View.GONE);
-                        loadData();
-                    }
-                });
-            }
-        };
-        return runnable;
-    }
+                @Override
+                public void failure(RetrofitError error) {
+
+                }
+            });
+        }
+    };
+
+    private Runnable fetchStatusAndUpdateProgress = new Runnable() {
+        @Override
+        public void run() {
+            getRestAPI().getStatus(new Callback<StatusResponse>() {
+
+                @Override
+                public void success(StatusResponse statusResponse, Response response) {
+                    currentWorkProgress.setProgress(statusResponse.getPercentDone());
+                    handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
+                }
+
+                @Override
+                public void failure(RetrofitError error) {
+                    currentWorkContainer.setVisibility(View.GONE);
+                    loadData();
+                }
+            });
+        }
+    };
 }

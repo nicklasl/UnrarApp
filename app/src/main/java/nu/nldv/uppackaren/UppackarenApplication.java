@@ -16,7 +16,7 @@ public class UppackarenApplication extends Application {
         if (restApiInstance == null) {
             RestAdapter restAdapter = new RestAdapter.Builder()
                     .setEndpoint(getSharedPreferences(UPPACKAREN, MODE_PRIVATE).getString(UPPACKAREN_SERVER_URI, "http://localhost:8080"))
-                    .setLogLevel(RestAdapter.LogLevel.FULL)
+                    .setLogLevel(RestAdapter.LogLevel.BASIC)
                     .build();
 
             restApiInstance = restAdapter.create(RestAPI.class);

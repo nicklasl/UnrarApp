@@ -13,4 +13,8 @@
         <property name="WaitForTasksToCompleteOnShutdown" value="true" />
     </bean>
 
+    <bean id="taskScheduler"
+          class="org.springframework.scheduling.concurrent.ConcurrentTaskScheduler">
+    </bean>
+
 </beans>

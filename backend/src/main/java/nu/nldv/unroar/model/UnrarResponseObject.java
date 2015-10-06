@@ -1,17 +1,17 @@
 package nu.nldv.unroar.model;
 
 public class UnrarResponseObject {
-    private String filePath;
+    private int queueId;
 
-    public UnrarResponseObject(String filePath) {
-        this.filePath = filePath;
+    public UnrarResponseObject(int queueId) {
+        this.queueId = queueId;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public int getQueueId() {
+        return queueId;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setQueueId(int queueId) {
+        this.queueId = queueId;
     }
 }
