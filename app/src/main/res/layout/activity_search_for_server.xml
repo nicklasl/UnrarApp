@@ -23,7 +23,7 @@
         android:layout_centerInParent="true"
         android:visibility="gone"
         android:indeterminate="true"
-        style="@android:style/Widget.ProgressBar.Large"/>
+        />
 
     <Button
         android:id="@+id/search_for_server_start_scan_button"
