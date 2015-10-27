@@ -15,4 +15,5 @@
     <string name="start_scan">Start scan</string>
     <string name="queue">Extractor Queue</string>
     <string name="current_work">Current work</string>
+    <string name="archives">Archives</string>
 </resources>
