@@ -144,7 +144,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     }
 
     private void startPollingForProgress() {
-        currentWorkContainer.setVisibility(View.VISIBLE);
         handler.removeCallbacks(fetchStatusAndUpdateProgress);
         handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
     }
@@ -158,10 +157,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
                     queueAdapter.clear();
                     queueAdapter.addAll(queueItems);
                     queueAdapter.notifyDataSetChanged();
-                    if (queueItems.isEmpty()) {
-                        queueContainer.setVisibility(View.GONE);
-                    } else {
-                        queueContainer.setVisibility(View.VISIBLE);
+                    if (!queueItems.isEmpty()) {
                         handler.postDelayed(fetchQueueRunnable, 1000);
                         startPollingForProgress();
                     }
@@ -188,7 +184,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
 
                 @Override
                 public void failure(RetrofitError error) {
-                    currentWorkContainer.setVisibility(View.GONE);
                     loadData();
                 }
             });
