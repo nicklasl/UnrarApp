@@ -102,7 +102,7 @@ public class MainController {
         if (newFile.exists()) {
             final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile});
             final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
-            return new ResponseEntity<>(new UnrarStatus((int) (percentDone * 100)), HttpStatus.OK);
+            return new ResponseEntity<>(new UnrarStatus(fileName, (int) (percentDone * 100)), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().build();
         }
