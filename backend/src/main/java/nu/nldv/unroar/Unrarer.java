@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
 import nu.nldv.unroar.model.Completion;
+import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 
 @Service
@@ -109,7 +110,15 @@ public class Unrarer {
         return null;
     }
 
-    public String guessFileName(File dir) {
+    private String guessResultFileName(FileHeader fh) {
+        if (fh != null) {
+            File out = new File(unrarPath + File.separator + fh.getFileNameString().trim());
+            return out.getName();
+        }
+        return null;
+    }
+
+    public String guessFile(File dir, GuessType type) {
         File rarFile = getRarFile(dir);
 
         Archive archive = null;
@@ -119,7 +128,14 @@ public class Unrarer {
             e.printStackTrace();
         }
         if (archive != null) {
-            return guessResultPath(archive.getFileHeaders().get(0));
+            switch (type) {
+                case PATH:
+                    return guessResultPath(archive.getFileHeaders().get(0));
+                case NAME:
+                    return guessResultFileName(archive.getFileHeaders().get(0));
+                default:
+                    return null;
+            }
         } else return null;
 
     }
@@ -158,14 +174,14 @@ public class Unrarer {
             if (getCurrentWork() != null) {
                 logger.info("Already working on something... checking again soon");
                 cancelFuture();
-                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(5));
+                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(2));
             } else if (!getQueue().isEmpty()) {
                 logger.info("Not working and there is something in queue... starting new work");
                 final QueueItem queueItem = getQueue().pop();
                 setCurrentWork(queueItem.getDir());
                 unrar(queueItem.getDir());
                 cancelFuture();
-                taskScheduler.schedule(peekInQueue, dateInSeconds(5));
+                taskScheduler.schedule(peekInQueue, dateInSeconds(1));
             } else {
                 logger.info("Not working and nothing in queue... time for a nap");
             }

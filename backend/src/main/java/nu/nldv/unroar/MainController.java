@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 import nu.nldv.unroar.model.RarArchiveFolder;
 import nu.nldv.unroar.model.UnrarResponseObject;
@@ -97,8 +98,9 @@ public class MainController {
         if (currentWorkFile == null) {
             return ResponseEntity.notFound().build();
         }
-        final String fileName = unrarer.guessFileName(currentWorkFile);
-        final File newFile = new File(fileName);
+        final String filePath = unrarer.guessFile(currentWorkFile, GuessType.PATH);
+        final String fileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
+        final File newFile = new File(filePath);
         if (newFile.exists()) {
             final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile});
             final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
@@ -109,8 +111,8 @@ public class MainController {
     }
 
     private boolean alreadyUnpacked(File dir, File[] files) {
-        String unpackedFileName = unrarer.guessFileName(dir);
-        boolean result = containsFileWithName(files, unpackedFileName);
+        String unpackedFilePath = unrarer.guessFile(dir, GuessType.PATH);
+        boolean result = containsFileWithName(files, unpackedFilePath);
         return result;
     }
 
