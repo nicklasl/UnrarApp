@@ -37,8 +37,6 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        adapter = new RarArchiveArrayAdapter(getActivity(), R.layout.row_layout, new ArrayList<RarArchive>());
-        adapter.clear();
     }
 
     @Override
@@ -49,13 +47,15 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        listView.setAdapter(adapter);
         listView.setOnItemClickListener(this);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        adapter = new RarArchiveArrayAdapter(getActivity(), R.layout.row_layout, new ArrayList<RarArchive>());
+        adapter.clear();
+        listView.setAdapter(adapter);
         loadData();
     }
 
@@ -81,7 +81,6 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
             @Override
             public void success(UnrarResponse unrarResponse, Response response) {
-                Toast.makeText(getActivity(), "Added " + unrarResponse.getQueueId() + " to queue.", Toast.LENGTH_SHORT).show();
                 list.remove(position);
                 adapter.remove(rarArchive);
                 adapter.notifyDataSetChanged();

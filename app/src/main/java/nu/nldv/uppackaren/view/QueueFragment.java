@@ -16,6 +16,7 @@ import java.util.List;
 import nu.nldv.uppackaren.R;
 import nu.nldv.uppackaren.UppackarenApplication;
 import nu.nldv.uppackaren.event.StartFetchQueueEvent;
+import nu.nldv.uppackaren.event.StartPollingForProgressEvent;
 import nu.nldv.uppackaren.model.QueueItem;
 import nu.nldv.uppackaren.util.QueueItemArrayAdapter;
 import retrofit.Callback;
@@ -38,8 +39,6 @@ public class QueueFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         UppackarenApplication.getEventBus().register(this);
         handler = new Handler(Looper.getMainLooper());
-        queueAdapter = new QueueItemArrayAdapter(getActivity(), R.layout.queue_row_layout, new ArrayList<QueueItem>());
-        queueAdapter.clear();
     }
 
     @Override
@@ -57,19 +56,21 @@ public class QueueFragment extends BaseFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        queueListView.setAdapter(queueAdapter);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        queueAdapter = new QueueItemArrayAdapter(getActivity(), R.layout.queue_row_layout, new ArrayList<QueueItem>());
+        queueAdapter.clear();
+        queueListView.setAdapter(queueAdapter);
         startFetchingQueue(null);
     }
 
     @Subscribe
     public void startFetchingQueue(StartFetchQueueEvent event) {
         handler.removeCallbacks(fetchQueueRunnable);
-        handler.postDelayed(fetchQueueRunnable, 1000);
+        handler.postDelayed(fetchQueueRunnable, 100);
     }
 
     private Runnable fetchQueueRunnable = new Runnable() {
@@ -83,6 +84,7 @@ public class QueueFragment extends BaseFragment {
                     queueAdapter.notifyDataSetChanged();
                     if (!queueItems.isEmpty()) {
                         handler.postDelayed(fetchQueueRunnable, 1000);
+                        UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
                     }
                 }
 

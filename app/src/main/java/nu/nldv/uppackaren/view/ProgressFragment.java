@@ -54,7 +54,12 @@ public class ProgressFragment extends BaseFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        resetCurrentWorkView();
+    }
+
+    private void resetCurrentWorkView() {
         currentWorkTextView.setText(getString(R.string.current_work, getString(R.string.idle)));
+        currentWorkProgress.setProgress(0);
     }
 
     @Override
@@ -66,7 +71,7 @@ public class ProgressFragment extends BaseFragment {
     @Subscribe
     public void startPollingForProgress(StartPollingForProgressEvent event) {
         handler.removeCallbacks(fetchStatusAndUpdateProgress);
-        handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
+        handler.postDelayed(fetchStatusAndUpdateProgress, 500);
     }
 
 
@@ -85,6 +90,7 @@ public class ProgressFragment extends BaseFragment {
                 @Override
                 public void failure(RetrofitError error) {
                     UppackarenApplication.getEventBus().post(new ReloadArchivesEvent());
+                    resetCurrentWorkView();
                 }
             });
         }
