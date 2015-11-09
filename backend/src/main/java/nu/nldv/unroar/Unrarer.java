@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 
 import nu.nldv.unroar.model.Completion;
@@ -36,7 +37,7 @@ public class Unrarer {
     private final Logger logger;
     private TaskScheduler taskScheduler;
     private TaskExecutor taskExecutor;
-    private LinkedList<QueueItem> queue = new LinkedList<>();
+    private Queue<QueueItem> queue = new LinkedList<>();
     private String unrarPath = MainController.path;
     private File currentWork = null;
 
@@ -54,7 +55,7 @@ public class Unrarer {
         QueueItem queueItem = new QueueItem(dir);
         if (!getQueue().contains(queueItem)) {
             logger.info("Adding to queue: " + queueItem);
-            getQueue().push(queueItem);
+            getQueue().add(queueItem);
             taskScheduler.schedule(peekInQueue, dateInSeconds(0));
             return dir.hashCode();
         } else {
@@ -177,7 +178,7 @@ public class Unrarer {
                 scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(2));
             } else if (!getQueue().isEmpty()) {
                 logger.info("Not working and there is something in queue... starting new work");
-                final QueueItem queueItem = getQueue().pop();
+                final QueueItem queueItem = getQueue().poll();
                 setCurrentWork(queueItem.getDir());
                 unrar(queueItem.getDir());
                 cancelFuture();
@@ -198,7 +199,7 @@ public class Unrarer {
         return new Date(new Date().getTime() + (i * 1000));
     }
 
-    public synchronized LinkedList<QueueItem> getQueue() {
+    public synchronized Queue<QueueItem> getQueue() {
         return queue;
     }
 
