@@ -63,10 +63,12 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         getRestAPI().getRarArchives(new Callback<List<RarArchive>>() {
             @Override
             public void success(List<RarArchive> rarArchives, Response response) {
-                list = rarArchives;
-                adapter.clear();
-                adapter.addAll(rarArchives);
-                adapter.notifyDataSetChanged();
+                if(isAdded()) {
+                    list = rarArchives;
+                    adapter.clear();
+                    adapter.addAll(rarArchives);
+                    adapter.notifyDataSetChanged();
+                }
             }
 
             @Override
@@ -81,11 +83,13 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
             @Override
             public void success(UnrarResponse unrarResponse, Response response) {
-                list.remove(position);
-                adapter.remove(rarArchive);
-                adapter.notifyDataSetChanged();
-                UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
-                UppackarenApplication.getEventBus().post(new StartFetchQueueEvent());
+                if(isAdded()) {
+                    list.remove(position);
+                    adapter.remove(rarArchive);
+                    adapter.notifyDataSetChanged();
+                    UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
+                    UppackarenApplication.getEventBus().post(new StartFetchQueueEvent());
+                }
             }
 
             @Override

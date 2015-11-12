@@ -58,8 +58,10 @@ public class ProgressFragment extends BaseFragment {
     }
 
     private void resetCurrentWorkView() {
-        currentWorkTextView.setText(getString(R.string.current_work, getString(R.string.idle)));
-        currentWorkProgress.setProgress(0);
+        if(isAdded()) {
+            currentWorkTextView.setText(getString(R.string.current_work, getString(R.string.idle)));
+            currentWorkProgress.setProgress(0);
+        }
     }
 
     @Override
@@ -82,8 +84,10 @@ public class ProgressFragment extends BaseFragment {
 
                 @Override
                 public void success(StatusResponse statusResponse, Response response) {
-                    currentWorkTextView.setText(getString(R.string.current_work, statusResponse.getFileName()));
-                    currentWorkProgress.setProgress(statusResponse.getPercentDone());
+                    if(isAdded()) {
+                        currentWorkTextView.setText(getString(R.string.current_work, statusResponse.getFileName()));
+                        currentWorkProgress.setProgress(statusResponse.getPercentDone());
+                    }
                     handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
                 }
 

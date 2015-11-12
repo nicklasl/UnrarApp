@@ -79,12 +79,14 @@ public class QueueFragment extends BaseFragment {
             getRestAPI().getQueue(new Callback<List<QueueItem>>() {
                 @Override
                 public void success(List<QueueItem> queueItems, Response response) {
-                    queueAdapter.clear();
-                    queueAdapter.addAll(queueItems);
-                    queueAdapter.notifyDataSetChanged();
-                    if (!queueItems.isEmpty()) {
-                        handler.postDelayed(fetchQueueRunnable, 1000);
-                        UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
+                    if(isAdded()) {
+                        queueAdapter.clear();
+                        queueAdapter.addAll(queueItems);
+                        queueAdapter.notifyDataSetChanged();
+                        if (!queueItems.isEmpty()) {
+                            handler.postDelayed(fetchQueueRunnable, 1000);
+                            UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
+                        }
                     }
                 }
 
