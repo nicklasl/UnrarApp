@@ -23,9 +23,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 
 import nu.nldv.unroar.model.Completion;
+import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 
 @Service
@@ -35,7 +37,7 @@ public class Unrarer {
     private final Logger logger;
     private TaskScheduler taskScheduler;
     private TaskExecutor taskExecutor;
-    private LinkedList<QueueItem> queue = new LinkedList<>();
+    private Queue<QueueItem> queue = new LinkedList<>();
     private String unrarPath = MainController.path;
     private File currentWork = null;
 
@@ -53,7 +55,7 @@ public class Unrarer {
         QueueItem queueItem = new QueueItem(dir);
         if (!getQueue().contains(queueItem)) {
             logger.info("Adding to queue: " + queueItem);
-            getQueue().push(queueItem);
+            getQueue().add(queueItem);
             taskScheduler.schedule(peekInQueue, dateInSeconds(0));
             return dir.hashCode();
         } else {
@@ -109,7 +111,15 @@ public class Unrarer {
         return null;
     }
 
-    public String guessFileName(File dir) {
+    private String guessResultFileName(FileHeader fh) {
+        if (fh != null) {
+            File out = new File(unrarPath + File.separator + fh.getFileNameString().trim());
+            return out.getName();
+        }
+        return null;
+    }
+
+    public String guessFile(File dir, GuessType type) {
         File rarFile = getRarFile(dir);
 
         Archive archive = null;
@@ -119,7 +129,14 @@ public class Unrarer {
             e.printStackTrace();
         }
         if (archive != null) {
-            return guessResultPath(archive.getFileHeaders().get(0));
+            switch (type) {
+                case PATH:
+                    return guessResultPath(archive.getFileHeaders().get(0));
+                case NAME:
+                    return guessResultFileName(archive.getFileHeaders().get(0));
+                default:
+                    return null;
+            }
         } else return null;
 
     }
@@ -158,14 +175,14 @@ public class Unrarer {
             if (getCurrentWork() != null) {
                 logger.info("Already working on something... checking again soon");
                 cancelFuture();
-                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(5));
+                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(2));
             } else if (!getQueue().isEmpty()) {
                 logger.info("Not working and there is something in queue... starting new work");
-                final QueueItem queueItem = getQueue().pop();
+                final QueueItem queueItem = getQueue().poll();
                 setCurrentWork(queueItem.getDir());
                 unrar(queueItem.getDir());
                 cancelFuture();
-                taskScheduler.schedule(peekInQueue, dateInSeconds(5));
+                taskScheduler.schedule(peekInQueue, dateInSeconds(1));
             } else {
                 logger.info("Not working and nothing in queue... time for a nap");
             }
@@ -182,7 +199,7 @@ public class Unrarer {
         return new Date(new Date().getTime() + (i * 1000));
     }
 
-    public synchronized LinkedList<QueueItem> getQueue() {
+    public synchronized Queue<QueueItem> getQueue() {
         return queue;
     }
 

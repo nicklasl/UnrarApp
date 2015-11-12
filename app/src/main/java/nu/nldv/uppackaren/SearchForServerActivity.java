@@ -1,5 +1,6 @@
 package nu.nldv.uppackaren;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +17,7 @@ import java.util.List;
 import nu.nldv.uppackaren.model.Server;
 import nu.nldv.uppackaren.util.ServerScanner;
 import nu.nldv.uppackaren.util.ServerScannerCallback;
+import nu.nldv.uppackaren.view.AddManuallyDialogFragment;
 import roboguice.inject.ContentView;
 import roboguice.inject.InjectView;
 
@@ -32,20 +34,12 @@ public class SearchForServerActivity extends BaseActivity implements AdapterView
     Button startScanButton;
     @InjectView(R.id.search_for_server_progressbar)
     ProgressBar progressBar;
-    @InjectView(R.id.search_for_server_add_manually_edittext)
-    EditText manualEditText;
-    @InjectView(R.id.search_for_server_add_manually_button)
-    Button addManuallyButton;
-    @InjectView(R.id.search_for_server_add_manually_container)
-    RelativeLayout addManuallyContainer;
+
     private ArrayAdapter<Server> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (sharedPrefs().contains(UppackarenApplication.UPPACKAREN_SERVER_URI)) {
-            manualEditText.setText(sharedPrefs().getString(UppackarenApplication.UPPACKAREN_SERVER_URI, "not set"));
-        }
         adapter = new ArrayAdapter<Server>(this, R.layout.row_layout, R.id.title_textview);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this);
@@ -68,11 +62,6 @@ public class SearchForServerActivity extends BaseActivity implements AdapterView
         scanner.execute(PORT);
     }
 
-    public void okManual(View view) {
-        String serverUri = manualEditText.getText().toString();
-        storeServerUri(serverUri);
-    }
-
     private void storeServerUri(String serverUri) {
         sharedPrefs().edit().putString(UppackarenApplication.UPPACKAREN_SERVER_URI, serverUri).commit();
         ((UppackarenApplication) getApplication()).resetRestApi();
@@ -80,8 +69,15 @@ public class SearchForServerActivity extends BaseActivity implements AdapterView
     }
 
     public void showManualContainer(View view) {
-        addManuallyButton.setVisibility(View.GONE);
-        addManuallyContainer.setVisibility(View.VISIBLE);
+        final AddManuallyDialogFragment fragment = AddManuallyDialogFragment.newInstance(new AddManuallyDialogFragment.Handler() {
+            @Override
+            public void handleOk(String result) {
+
+                storeServerUri(result);
+            }
+        });
+
+        fragment.show(getFragmentManager(), AddManuallyDialogFragment.TAG);
     }
 
     @Override

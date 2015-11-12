@@ -40,39 +40,5 @@
         android:layout_alignParentBottom="true"
         android:onClick="showManualContainer"
         android:text="@string/add_manually"/>
-    <RelativeLayout
-        android:id="@+id/search_for_server_add_manually_container"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
-
-        <TextView
-            android:id="@+id/search_for_server_add_manually_heading"
-            style="@style/Heading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/add_manually" />
-
-        <EditText
-            android:id="@+id/search_for_server_add_manually_edittext"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/search_for_server_add_manually_heading"
-            android:layout_toStartOf="@+id/search_for_server_add_manually_ok_button"
-            android:hint="@string/server_uri_hint"
-            android:inputType="text" />
-
-        <Button
-            android:id="@+id/search_for_server_add_manually_ok_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBottom="@id/search_for_server_add_manually_edittext"
-            android:layout_alignParentEnd="true"
-            android:onClick="okManual"
-            android:text="@string/ok" />
-    </RelativeLayout>
 
 </RelativeLayout>

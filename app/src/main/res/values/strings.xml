@@ -14,6 +14,7 @@
     <string name="scan_network_for_server">Scan for server</string>
     <string name="start_scan">Start scan</string>
     <string name="queue">Extractor Queue</string>
-    <string name="current_work">Current work</string>
+    <string name="current_work">Current work: %1$s</string>
     <string name="archives">Archives</string>
+    <string name="idle">IDLE</string>
 </resources>

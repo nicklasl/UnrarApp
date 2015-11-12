@@ -9,14 +9,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity">
 
-    <ProgressBar
-        android:id="@+id/loader"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:indeterminate="true"
-        android:visibility="visible" />
-
     <LinearLayout
         android:id="@+id/archive_list_container"
         android:layout_width="match_parent"
@@ -26,18 +18,7 @@
         android:background="@color/white"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:layout_marginTop="10dp"
-            android:text="@string/archives"
-            android:textSize="16sp" />
 
-        <ListView
-            android:id="@+id/listview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
     </LinearLayout>
 
     <LinearLayout
@@ -49,19 +30,6 @@
         android:layout_margin="1dp"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/current_work"
-            android:textSize="16sp" />
-
-        <ProgressBar
-            android:id="@+id/current_work_progressbar"
-            style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="5dp"
-            android:indeterminate="false"
-            android:max="100" />
     </LinearLayout>
 
 
@@ -75,19 +43,6 @@
         android:layout_margin="1dp"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/queue_headline"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:layout_marginTop="10dp"
-            android:text="@string/queue"
-            android:textSize="16sp" />
-
-        <ListView
-            android:id="@+id/queue_listview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
     </LinearLayout>
 
 </RelativeLayout>
