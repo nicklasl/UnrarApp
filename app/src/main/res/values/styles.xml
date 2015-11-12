@@ -23,4 +23,15 @@
 
     </style>
 
+    <style name="Dotted" parent="android:Widget.TextView">
+        <item name="android:layout_marginBottom">5dp</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginLeft">10dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:padding">5dp</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:background">@drawable/dotted</item>
+    </style>
+
 </resources>

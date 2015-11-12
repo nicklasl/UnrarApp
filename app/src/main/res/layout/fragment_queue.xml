@@ -6,11 +6,10 @@
         android:id="@+id/queue_headline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="5dp"
-        android:layout_marginTop="10dp"
         android:layout_alignParentTop="true"
         android:text="@string/queue"
-        android:textSize="16sp" />
+        style="@style/Dotted"
+         />
 
     <ListView
         android:id="@+id/queue_listview"
