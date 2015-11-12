@@ -88,7 +88,7 @@ public class MainController {
 
     @RequestMapping(value = "/queue", method = RequestMethod.GET)
     public ResponseEntity<List<QueueItem>> getQueue() {
-        return new ResponseEntity<List<QueueItem>>(unrarer.getQueue(), HttpStatus.OK);
+        return new ResponseEntity<List<QueueItem>>(new ArrayList<>(unrarer.getQueue()), HttpStatus.OK);
     }
 
 
