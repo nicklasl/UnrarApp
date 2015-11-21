@@ -1,17 +1,17 @@
 package nu.nldv.unroar.model;
 
 public class UnrarResponseObject {
-    private int queueId;
+    private String queueId;
 
-    public UnrarResponseObject(int queueId) {
+    public UnrarResponseObject(String queueId) {
         this.queueId = queueId;
     }
 
-    public int getQueueId() {
+    public String getQueueId() {
         return queueId;
     }
 
-    public void setQueueId(int queueId) {
+    public void setQueueId(String queueId) {
         this.queueId = queueId;
     }
 }

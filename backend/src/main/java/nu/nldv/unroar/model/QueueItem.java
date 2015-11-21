@@ -2,25 +2,27 @@ package nu.nldv.unroar.model;
 
 import java.io.File;
 
+import nu.nldv.unroar.util.Md5Hasher;
+
 public class QueueItem {
-    private int id;
+    private String id;
     private File dir;
 
     public QueueItem(File dir) {
-        this.id = dir.hashCode();
+        this.id = Md5Hasher.getInstance().hash(dir.getAbsolutePath());
         this.dir = dir;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public File getDir() {
         return dir;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public void setDir(File dir) {
@@ -40,7 +42,7 @@ public class QueueItem {
 
     @Override
     public int hashCode() {
-        return id;
+        return id.hashCode();
     }
 
     @Override

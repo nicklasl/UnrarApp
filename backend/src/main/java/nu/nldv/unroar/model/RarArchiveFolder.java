@@ -1,6 +1,9 @@
 package nu.nldv.unroar.model;
 
 import java.io.File;
+import java.util.List;
+
+import nu.nldv.unroar.util.Md5Hasher;
 
 public class RarArchiveFolder {
 
@@ -8,8 +11,9 @@ public class RarArchiveFolder {
     private String name;
     private int numberOfFiles;
     private int dirSizeInMB;
+    private List<RarArchiveFolder> subFolders;
 
-    public RarArchiveFolder(File dir) {
+    public RarArchiveFolder(File dir, List<RarArchiveFolder> subDirs) {
         this.id = constructIdFromFile(dir);
         this.name = dir.getName();
         File[] files = dir.listFiles();
@@ -19,10 +23,11 @@ public class RarArchiveFolder {
         } else {
             this.numberOfFiles = 0;
         }
+        this.subFolders = subDirs;
     }
 
     public static String constructIdFromFile(File dir) {
-        return Integer.toString(dir.getAbsolutePath().hashCode());
+        return Md5Hasher.getInstance().hash(dir.getAbsolutePath());
     }
 
     public static int calculateDirSize(File[] files) {
@@ -67,5 +72,13 @@ public class RarArchiveFolder {
 
     public void setDirSizeInMB(int dirSizeInMB) {
         this.dirSizeInMB = dirSizeInMB;
+    }
+
+    public List<RarArchiveFolder> getSubFolders() {
+        return subFolders;
+    }
+
+    public void setSubFolders(List<RarArchiveFolder> subFolders) {
+        this.subFolders = subFolders;
     }
 }

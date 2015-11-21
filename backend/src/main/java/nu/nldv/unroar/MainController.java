@@ -2,8 +2,8 @@ package nu.nldv.unroar;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -13,12 +13,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
+import nu.nldv.unroar.filter.RarFileFilter;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 import nu.nldv.unroar.model.RarArchiveFolder;
@@ -26,10 +27,14 @@ import nu.nldv.unroar.model.UnrarResponseObject;
 import nu.nldv.unroar.model.UnrarStatus;
 
 @Controller
-@ComponentScan
-@EnableAutoConfiguration
+@SpringBootApplication
+@Import(UppackarenConfig.class)
 public class MainController {
 
+    @Autowired
+    private DirectoriesOnlyFilter directoriesOnlyFilter;
+    @Autowired
+    private RarFileFilter rarFileFilter;
     @Autowired
     private Unrarer unrarer;
 
@@ -45,22 +50,36 @@ public class MainController {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     @ResponseBody
     public List<RarArchiveFolder> listRarArchives() throws IOException {
-        List<RarArchiveFolder> archiveFolders = new ArrayList<>();
         File currentDir = new File(path);
+        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFoldersRecursive(currentDir);
+        return archiveFolders;
+    }
+
+    private List<RarArchiveFolder> constructListOfArchiveFoldersRecursive(File currentDir) {
+        List<RarArchiveFolder> archiveFolders = new ArrayList<>();
         File[] files = currentDir.listFiles();
         if (files != null) {
             for (File dir : files) {
+                if (dir.isDirectory() && hasSubDir(dir)) {
+                    final List<RarArchiveFolder> subDirs = constructListOfArchiveFoldersRecursive(dir);
+                    if(subDirs != null && !subDirs.isEmpty()) {
+                        archiveFolders.add(new RarArchiveFolder(dir, subDirs));
+                    }
+                }
                 if (dir.isDirectory()
                         && containsRarFiles(dir)
                         && !alreadyUnpacked(dir, files)
                         && !inQueue(dir)) {
-                    archiveFolders.add(new RarArchiveFolder(dir));
+                    archiveFolders.add(new RarArchiveFolder(dir, null));
                 }
             }
         }
-
-
         return archiveFolders;
+    }
+
+    private boolean hasSubDir(File dir) {
+        if (dir == null) return false;
+        return Arrays.stream(dir.listFiles(directoriesOnlyFilter)).count() > 0;
     }
 
     private boolean inQueue(File dir) {
@@ -77,12 +96,13 @@ public class MainController {
 
     @RequestMapping(value = "/{id}", method = RequestMethod.POST)
     public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id) {
-        File dir = findFileById(id);
+        File root = new File(path);
+        File dir = findFileById(id, root);
         if (dir == null) {
-            return new ResponseEntity<>(new UnrarResponseObject(0), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
         }
 
-        int queueId = unrarer.addFileToUnrarQueue(dir);
+        String queueId = unrarer.addFileToUnrarQueue(dir);
         return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
     }
 
@@ -125,17 +145,20 @@ public class MainController {
         return false;
     }
 
-    private File findFileById(String id) {
-        File currentDir = new File(path);
-        File[] files = currentDir.listFiles();
+    private File findFileById(String id, File root) {
+        File result = null;
+        File[] files = root.listFiles(directoriesOnlyFilter);
         if (files != null) {
             for (File dir : files) {
                 if (RarArchiveFolder.constructIdFromFile(dir).equalsIgnoreCase(id)) {
-                    return dir;
+                    result = dir;
+                }
+                if( result == null && hasSubDir(dir)) {
+                    result = findFileById(id, dir);
                 }
             }
         }
-        return null;
+        return result;
     }
 
 
@@ -143,9 +166,7 @@ public class MainController {
         if (dir == null) {
             return false;
         } else {
-            final FilenameFilter filenameFilter = (f, n) -> n.endsWith(".rar");
-            boolean b = Arrays.stream(dir.listFiles(filenameFilter)).count() > 0;
-            return b;
+            return Arrays.stream(dir.listFiles(rarFileFilter)).count() > 0;
         }
     }
 

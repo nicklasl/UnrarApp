@@ -7,13 +7,10 @@ import com.github.junrar.rarfile.FileHeader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -29,27 +26,27 @@ import java.util.concurrent.ScheduledFuture;
 import nu.nldv.unroar.model.Completion;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
+import nu.nldv.unroar.util.Md5Hasher;
 
 @Service
 @Scope(value = "singleton")
 public class Unrarer {
 
-    private final Logger logger;
+    @Autowired
     private TaskScheduler taskScheduler;
+    @Autowired
     private TaskExecutor taskExecutor;
+
+    private Logger logger;
     private Queue<QueueItem> queue = new LinkedList<>();
-    private String unrarPath = MainController.path;
     private File currentWork = null;
 
 
     public Unrarer() {
-        ApplicationContext context = new ClassPathXmlApplicationContext("Spring-Config.xml");
-        taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
-        taskScheduler = (ConcurrentTaskScheduler) context.getBean("taskScheduler");
         logger = LoggerFactory.getLogger(this.getClass());
     }
 
-    public int addFileToUnrarQueue(File dir) {
+    public String addFileToUnrarQueue(File dir) {
         assert (dir != null);
         assert (dir.isDirectory());
         QueueItem queueItem = new QueueItem(dir);
@@ -57,10 +54,10 @@ public class Unrarer {
             logger.info("Adding to queue: " + queueItem);
             getQueue().add(queueItem);
             taskScheduler.schedule(peekInQueue, dateInSeconds(0));
-            return dir.hashCode();
+            return Md5Hasher.getInstance().hash(dir.getAbsolutePath());
         } else {
             logger.info("queue already contains the queueItem: " + queueItem);
-            return -1;
+            return "-1";
         }
 
     }
@@ -75,7 +72,7 @@ public class Unrarer {
             e.printStackTrace();
         }
         if (archive != null) {
-            final String resultPath = guessResultPath(archive.getFileHeaders().get(0));
+            final String resultPath = guessResultPath(archive.getFileHeaders().get(0), dir);
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
                 public void success() {
@@ -90,7 +87,7 @@ public class Unrarer {
                     logger.info("Failed extracting " + resultPath);
                     setCurrentWork(null);
                 }
-            }));
+            }, dir.getParent()));
             return resultPath;
         }
         return null;
@@ -103,16 +100,18 @@ public class Unrarer {
     }
 
 
-    private String guessResultPath(FileHeader fh) {
+    private String guessResultPath(FileHeader fh, File dir) {
         if (fh != null) {
+            String unrarPath = dir.getParent();
             File out = new File(unrarPath + File.separator + fh.getFileNameString().trim());
             return out.getAbsolutePath();
         }
         return null;
     }
 
-    private String guessResultFileName(FileHeader fh) {
+    private String guessResultFileName(FileHeader fh, File dir) {
         if (fh != null) {
+            String unrarPath = dir.getParent();
             File out = new File(unrarPath + File.separator + fh.getFileNameString().trim());
             return out.getName();
         }
@@ -131,9 +130,9 @@ public class Unrarer {
         if (archive != null) {
             switch (type) {
                 case PATH:
-                    return guessResultPath(archive.getFileHeaders().get(0));
+                    return guessResultPath(archive.getFileHeaders().get(0), dir);
                 case NAME:
-                    return guessResultFileName(archive.getFileHeaders().get(0));
+                    return guessResultFileName(archive.getFileHeaders().get(0), dir);
                 default:
                     return null;
             }
@@ -144,10 +143,12 @@ public class Unrarer {
     private class HeavyLifting implements Runnable {
         private final Archive archive;
         private final Completion completion;
+        private final String unrarPath;
 
-        public HeavyLifting(Archive archive, Completion completion) {
+        public HeavyLifting(Archive archive, Completion completion, String unrarPath) {
             this.archive = archive;
             this.completion = completion;
+            this.unrarPath = unrarPath;
         }
 
         @Override
