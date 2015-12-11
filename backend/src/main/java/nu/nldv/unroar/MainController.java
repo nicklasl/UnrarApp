@@ -50,27 +50,28 @@ public class MainController {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     @ResponseBody
     public List<RarArchiveFolder> listRarArchives() throws IOException {
-        File currentDir = new File(path);
-        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFoldersRecursive(currentDir);
+        File root = new File(path);
+        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFolders(root);
         return archiveFolders;
     }
 
-    private List<RarArchiveFolder> constructListOfArchiveFoldersRecursive(File currentDir) {
+    @RequestMapping(value = "/{pathId}", method = RequestMethod.GET)
+    @ResponseBody
+    public List<RarArchiveFolder> listRarArchives(@PathVariable String pathId) throws IOException {
+        File root = new File(path);
+        final File currentDir = findFileById(pathId, root);
+        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFolders(currentDir);
+        return archiveFolders;
+    }
+
+    private List<RarArchiveFolder> constructListOfArchiveFolders(File currentDir) {
         List<RarArchiveFolder> archiveFolders = new ArrayList<>();
         File[] files = currentDir.listFiles();
         if (files != null) {
             for (File dir : files) {
-                if (dir.isDirectory() && hasSubDir(dir)) {
-                    final List<RarArchiveFolder> subDirs = constructListOfArchiveFoldersRecursive(dir);
-                    if(subDirs != null && !subDirs.isEmpty()) {
-                        archiveFolders.add(new RarArchiveFolder(dir, subDirs));
-                    }
-                }
                 if (dir.isDirectory()
-                        && containsRarFiles(dir)
-                        && !alreadyUnpacked(dir, files)
-                        && !inQueue(dir)) {
-                    archiveFolders.add(new RarArchiveFolder(dir, null));
+                        && (hasSubDir(dir) || (containsRarFiles(dir) && !alreadyUnpacked(dir, files) && !inQueue(dir))) ) {
+                    archiveFolders.add(new RarArchiveFolder(dir, hasSubDir(dir)));
                 }
             }
         }
@@ -78,8 +79,8 @@ public class MainController {
     }
 
     private boolean hasSubDir(File dir) {
-        if (dir == null) return false;
-        return Arrays.stream(dir.listFiles(directoriesOnlyFilter)).count() > 0;
+        return dir != null
+                && Arrays.stream(dir.listFiles(directoriesOnlyFilter)).anyMatch((file) -> containsRarFiles(file));
     }
 
     private boolean inQueue(File dir) {

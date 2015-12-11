@@ -7,13 +7,13 @@ import nu.nldv.unroar.util.Md5Hasher;
 
 public class RarArchiveFolder {
 
+    private final boolean hasSubDirs;
     private String id;
     private String name;
     private int numberOfFiles;
     private int dirSizeInMB;
-    private List<RarArchiveFolder> subFolders;
 
-    public RarArchiveFolder(File dir, List<RarArchiveFolder> subDirs) {
+    public RarArchiveFolder(File dir, boolean subDir) {
         this.id = constructIdFromFile(dir);
         this.name = dir.getName();
         File[] files = dir.listFiles();
@@ -23,7 +23,7 @@ public class RarArchiveFolder {
         } else {
             this.numberOfFiles = 0;
         }
-        this.subFolders = subDirs;
+        this.hasSubDirs = subDir;
     }
 
     public static String constructIdFromFile(File dir) {
@@ -74,11 +74,7 @@ public class RarArchiveFolder {
         this.dirSizeInMB = dirSizeInMB;
     }
 
-    public List<RarArchiveFolder> getSubFolders() {
-        return subFolders;
-    }
-
-    public void setSubFolders(List<RarArchiveFolder> subFolders) {
-        this.subFolders = subFolders;
+    public boolean isHasSubDirs() {
+        return hasSubDirs;
     }
 }
