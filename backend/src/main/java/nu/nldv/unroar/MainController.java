@@ -64,6 +64,43 @@ public class MainController {
         return archiveFolders;
     }
 
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.POST)
+    public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id) {
+        File root = new File(path);
+        File dir = findFileById(id, root);
+        if (dir == null) {
+            return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
+        }
+
+        String queueId = unrarer.addFileToUnrarQueue(dir);
+        return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/queue", method = RequestMethod.GET)
+    public ResponseEntity<List<QueueItem>> getQueue() {
+        return new ResponseEntity<List<QueueItem>>(new ArrayList<>(unrarer.getQueue()), HttpStatus.OK);
+    }
+
+
+    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    public ResponseEntity getUnpackingStatus() throws IOException {
+        final File currentWorkFile = unrarer.getCurrentWork();
+        if (currentWorkFile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        final String filePath = unrarer.guessFile(currentWorkFile, GuessType.PATH);
+        final String fileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
+        final File newFile = new File(filePath);
+        if (newFile.exists()) {
+            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile});
+            final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
+            return new ResponseEntity<>(new UnrarStatus(fileName, (int) (percentDone * 100)), HttpStatus.OK);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     private List<RarArchiveFolder> constructListOfArchiveFolders(File currentDir) {
         List<RarArchiveFolder> archiveFolders = new ArrayList<>();
         File[] files = currentDir.listFiles();
@@ -95,41 +132,6 @@ public class MainController {
         return inQueue || (unrarer.getCurrentWork() != null && unrarer.getCurrentWork().equals(dir));
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.POST)
-    public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id) {
-        File root = new File(path);
-        File dir = findFileById(id, root);
-        if (dir == null) {
-            return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
-        }
-
-        String queueId = unrarer.addFileToUnrarQueue(dir);
-        return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/queue", method = RequestMethod.GET)
-    public ResponseEntity<List<QueueItem>> getQueue() {
-        return new ResponseEntity<List<QueueItem>>(new ArrayList<>(unrarer.getQueue()), HttpStatus.OK);
-    }
-
-
-    @RequestMapping(value = "/status", method = RequestMethod.GET)
-    public ResponseEntity getUnpackingStatusForId() throws IOException {
-        final File currentWorkFile = unrarer.getCurrentWork();
-        if (currentWorkFile == null) {
-            return ResponseEntity.notFound().build();
-        }
-        final String filePath = unrarer.guessFile(currentWorkFile, GuessType.PATH);
-        final String fileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
-        final File newFile = new File(filePath);
-        if (newFile.exists()) {
-            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile});
-            final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
-            return new ResponseEntity<>(new UnrarStatus(fileName, (int) (percentDone * 100)), HttpStatus.OK);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     private boolean alreadyUnpacked(File dir, File[] files) {
         String unpackedFilePath = unrarer.guessFile(dir, GuessType.PATH);
