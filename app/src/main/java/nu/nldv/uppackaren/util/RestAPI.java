@@ -17,8 +17,8 @@ public interface RestAPI {
     @GET("/info")
     Response getInfoSynchronous();
 
-    @GET("/")
-    void getRarArchives(Callback<List<RarArchive>> callback);
+    @GET("/{id}")
+    void getRarArchives(@Path("id") String id, Callback<List<RarArchive>> callback);
 
     @POST("/{id}")
     void unRar(@Path("id") String id, Callback<UnrarResponse> callback);
