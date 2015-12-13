@@ -127,7 +127,7 @@ public class Unrarer {
         } catch (RarException | IOException e) {
             e.printStackTrace();
         }
-        if (archive != null) {
+        if (archive != null && archive.getFileHeaders().size() > 0) {
             switch (type) {
                 case PATH:
                     return guessResultPath(archive.getFileHeaders().get(0), dir);
