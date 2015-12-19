@@ -28,7 +28,7 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 import roboguice.inject.InjectView;
 
-public class ArchivesFragment extends BaseFragment implements AdapterView.OnItemClickListener {
+public class ArchivesFragment extends BaseFragment implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 
     public static final String TAG = ArchivesFragment.class.getSimpleName();
     private static final String ARG_ARCHIVE = "arg_archive";
@@ -39,7 +39,7 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
 
     private List<RarArchive> list;
     private RarArchiveArrayAdapter adapter;
-    private View upButton;
+    private View loader;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,7 +55,8 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_archives, container, false);
-        upButton = view.findViewById(R.id.go_up_imageview);
+        loader = view.findViewById(R.id.loader);
+        View upButton = view.findViewById(R.id.go_up_imageview);
         upButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -74,6 +75,7 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         listView.setOnItemClickListener(this);
+        listView.setOnItemLongClickListener(this);
     }
 
     @Override
@@ -90,10 +92,12 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         if(archive != null) {
             id =  archive.getId();
         }
+        loader.setVisibility(View.VISIBLE);
         getRestAPI().getRarArchives(id, new Callback<List<RarArchive>>() {
             @Override
             public void success(List<RarArchive> rarArchives, Response response) {
                 if(isAdded()) {
+                    loader.setVisibility(View.GONE);
                     list = rarArchives;
                     adapter.clear();
                     adapter.addAll(rarArchives);
@@ -154,4 +158,9 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         });
     }
 
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
+        return false;
+    }
 }

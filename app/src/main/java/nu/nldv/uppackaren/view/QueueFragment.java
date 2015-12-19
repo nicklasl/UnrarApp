@@ -33,6 +33,7 @@ public class QueueFragment extends BaseFragment {
 
     private QueueItemArrayAdapter queueAdapter;
     private Handler handler;
+    private View loader;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -49,7 +50,9 @@ public class QueueFragment extends BaseFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_queue, container, false);
+        final View inflate = inflater.inflate(R.layout.fragment_queue, container, false);
+        loader = inflate.findViewById(R.id.loader);
+        return inflate;
     }
 
 
@@ -76,10 +79,12 @@ public class QueueFragment extends BaseFragment {
     private Runnable fetchQueueRunnable = new Runnable() {
         @Override
         public void run() {
+            loader.setVisibility(View.VISIBLE);
             getRestAPI().getQueue(new Callback<List<QueueItem>>() {
                 @Override
                 public void success(List<QueueItem> queueItems, Response response) {
                     if(isAdded()) {
+                        loader.setVisibility(View.GONE);
                         queueAdapter.clear();
                         queueAdapter.addAll(queueItems);
                         queueAdapter.notifyDataSetChanged();
@@ -92,7 +97,7 @@ public class QueueFragment extends BaseFragment {
 
                 @Override
                 public void failure(RetrofitError error) {
-
+                    loader.setVisibility(View.GONE);
                 }
             });
         }
