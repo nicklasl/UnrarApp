@@ -35,14 +35,7 @@ public class ProgressFragment extends BaseFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        UppackarenApplication.getEventBus().register(this);
         handler = new Handler(Looper.getMainLooper());
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        UppackarenApplication.getEventBus().unregister(this);
     }
 
     @Override

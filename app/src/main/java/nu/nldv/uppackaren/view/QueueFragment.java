@@ -38,14 +38,7 @@ public class QueueFragment extends BaseFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        UppackarenApplication.getEventBus().register(this);
         handler = new Handler(Looper.getMainLooper());
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        UppackarenApplication.getEventBus().unregister(this);
     }
 
     @Override
@@ -83,7 +76,7 @@ public class QueueFragment extends BaseFragment {
             getRestAPI().getQueue(new Callback<List<QueueItem>>() {
                 @Override
                 public void success(List<QueueItem> queueItems, Response response) {
-                    if(isAdded()) {
+                    if (isAdded()) {
                         loader.setVisibility(View.GONE);
                         queueAdapter.clear();
                         queueAdapter.addAll(queueItems);
