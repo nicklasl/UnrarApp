@@ -1,7 +1,10 @@
 package nu.nldv.uppackaren.view;
 
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -28,7 +31,7 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 import roboguice.inject.InjectView;
 
-public class ArchivesFragment extends BaseFragment implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
+public class ArchivesFragment extends BaseFragment implements AdapterView.OnItemClickListener {
 
     public static final String TAG = ArchivesFragment.class.getSimpleName();
     private static final String ARG_ARCHIVE = "arg_archive";
@@ -44,9 +47,9 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(getArguments() != null) {
+        if (getArguments() != null) {
             final Serializable serializable = getArguments().getSerializable(ARG_ARCHIVE);
-            if(serializable != null && serializable instanceof RarArchive) {
+            if (serializable != null && serializable instanceof RarArchive) {
                 archive = (RarArchive) serializable;
             }
         }
@@ -63,9 +66,9 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
                 getActivity().onBackPressed();
             }
         });
-        if(archive == null) {
+        if (archive == null) {
             upButton.setVisibility(View.GONE);
-        }else {
+        } else {
             upButton.setVisibility(View.VISIBLE);
         }
         return view;
@@ -75,7 +78,6 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         listView.setOnItemClickListener(this);
-        listView.setOnItemLongClickListener(this);
     }
 
     @Override
@@ -84,19 +86,20 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         adapter = new RarArchiveArrayAdapter(getActivity(), R.layout.row_layout, new ArrayList<RarArchive>());
         adapter.clear();
         listView.setAdapter(adapter);
+        registerForContextMenu(listView);
         loadData();
     }
 
     public void loadData() {
         String id = "";
-        if(archive != null) {
-            id =  archive.getId();
+        if (archive != null) {
+            id = archive.getId();
         }
         loader.setVisibility(View.VISIBLE);
         getRestAPI().getRarArchives(id, new Callback<List<RarArchive>>() {
             @Override
             public void success(List<RarArchive> rarArchives, Response response) {
-                if(isAdded()) {
+                if (isAdded()) {
                     loader.setVisibility(View.GONE);
                     list = rarArchives;
                     adapter.clear();
@@ -114,11 +117,39 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     @Override
     public void onItemClick(AdapterView<?> parent, final View view, final int position, long id) {
         final RarArchive rarArchive = list.get(position);
-        if(rarArchive.isHasSubDirs()) {
+        if (rarArchive.isHasSubDirs()) {
             reloadListViewWithSubDir(rarArchive);
         } else {
             initiateUnrar(rarArchive, position);
         }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        if (v.getId() == R.id.listview) {
+            menu.setHeaderTitle(R.string.action);
+            menu.add(Menu.NONE, 0, 0, R.string.unrar);
+            menu.add(Menu.NONE, 1, 1, R.string.navigate);
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        final int listPosition = info.position;
+        final RarArchive rarArchive = list.get(listPosition);
+        switch (item.getItemId()) {
+            case 0:
+                initiateUnrar(rarArchive, listPosition);
+                return true;
+            case 1:
+                reloadListViewWithSubDir(rarArchive);
+                return true;
+            default:
+                return false;
+        }
+
+
     }
 
     @Subscribe
@@ -127,7 +158,7 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     }
 
     private void reloadListViewWithSubDir(RarArchive rarArchive) {
-        ((MainActivity)getActivity()).pushFragment(rarArchive);
+        ((MainActivity) getActivity()).pushFragment(rarArchive);
     }
 
     public static ArchivesFragment newInstance(RarArchive rarArchive) {
@@ -142,7 +173,7 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
             @Override
             public void success(UnrarResponse unrarResponse, Response response) {
-                if(isAdded()) {
+                if (isAdded()) {
                     list.remove(position);
                     adapter.remove(rarArchive);
                     adapter.notifyDataSetChanged();
@@ -158,9 +189,4 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
         });
     }
 
-    @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-
-        return false;
-    }
 }
