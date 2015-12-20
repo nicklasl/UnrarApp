@@ -72,6 +72,7 @@ public class Unrarer {
             e.printStackTrace();
         }
         if (archive != null && !archive.getFileHeaders().isEmpty()) {
+            setCurrentWork(rarFile);
             final String resultPath = guessResultPath(archive.getFileHeaders().get(0), dir);
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
@@ -89,6 +90,8 @@ public class Unrarer {
                 }
             }, dir.getParent()));
             return resultPath;
+        } else {
+            logger.error("Failed extracting " + rarFile.getAbsolutePath());
         }
         return null;
     }
@@ -180,7 +183,6 @@ public class Unrarer {
             } else if (!getQueue().isEmpty()) {
                 logger.info("Not working and there is something in queue... starting new work");
                 final QueueItem queueItem = getQueue().poll();
-                setCurrentWork(queueItem.getDir());
                 unrar(queueItem.getDir());
                 cancelFuture();
                 taskScheduler.schedule(peekInQueue, dateInSeconds(1));
