@@ -71,7 +71,7 @@ public class Unrarer {
         } catch (RarException | IOException e) {
             e.printStackTrace();
         }
-        if (archive != null) {
+        if (archive != null && !archive.getFileHeaders().isEmpty()) {
             final String resultPath = guessResultPath(archive.getFileHeaders().get(0), dir);
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
@@ -127,7 +127,7 @@ public class Unrarer {
         } catch (RarException | IOException e) {
             e.printStackTrace();
         }
-        if (archive != null && archive.getFileHeaders().size() > 0) {
+        if (archive != null && !archive.getFileHeaders().isEmpty()) {
             switch (type) {
                 case PATH:
                     return guessResultPath(archive.getFileHeaders().get(0), dir);
