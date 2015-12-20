@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
+import nu.nldv.unroar.filter.NoHiddenFilesFilter;
 import nu.nldv.unroar.filter.RarFileFilter;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
@@ -35,6 +36,8 @@ public class MainController {
     private DirectoriesOnlyFilter directoriesOnlyFilter;
     @Autowired
     private RarFileFilter rarFileFilter;
+    @Autowired
+    private NoHiddenFilesFilter noHiddenFilesFilter;
     @Autowired
     private Unrarer unrarer;
 
@@ -103,12 +106,16 @@ public class MainController {
 
     private List<RarArchiveFolder> constructListOfArchiveFolders(File currentDir) {
         List<RarArchiveFolder> archiveFolders = new ArrayList<>();
-        File[] files = currentDir.listFiles();
+        File[] files = currentDir.listFiles(noHiddenFilesFilter);
         if (files != null) {
             for (File dir : files) {
-                if (dir.isDirectory()
-                        && (hasSubDir(dir) || (containsRarFiles(dir) && !alreadyUnpacked(dir, files) && !inQueue(dir))) ) {
-                    archiveFolders.add(new RarArchiveFolder(dir, hasSubDir(dir)));
+                if (!dir.isDirectory()) {
+                    continue;
+                }
+                if (containsRarFiles(dir) && !alreadyUnpacked(dir, files) && !inQueue(dir)) {
+                    archiveFolders.add(new RarArchiveFolder(dir, false));
+                } else if (hasSubDir(dir)) {
+                    archiveFolders.add(new RarArchiveFolder(dir, true));
                 }
             }
         }
@@ -156,7 +163,7 @@ public class MainController {
                 if (RarArchiveFolder.constructIdFromFile(dir).equalsIgnoreCase(id)) {
                     result = dir;
                 }
-                if( result == null && hasSubDir(dir)) {
+                if (result == null && hasSubDir(dir)) {
                     result = findFileById(id, dir);
                 }
             }

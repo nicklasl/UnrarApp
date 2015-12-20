@@ -1,11 +1,13 @@
 package nu.nldv.unroar.model;
 
 import java.io.File;
-import java.util.List;
 
+import nu.nldv.unroar.filter.NoHiddenFilesFilter;
 import nu.nldv.unroar.util.Md5Hasher;
 
 public class RarArchiveFolder {
+
+    private static final NoHiddenFilesFilter NO_HIDDEN_FILES_FILTER = new NoHiddenFilesFilter();
 
     private final boolean hasSubDirs;
     private String id;
@@ -16,7 +18,7 @@ public class RarArchiveFolder {
     public RarArchiveFolder(File dir, boolean subDir) {
         this.id = constructIdFromFile(dir);
         this.name = dir.getName();
-        File[] files = dir.listFiles();
+        File[] files = dir.listFiles(NO_HIDDEN_FILES_FILTER);
         this.dirSizeInMB = calculateDirSize(files);
         if (files != null) {
             this.numberOfFiles = files.length;
