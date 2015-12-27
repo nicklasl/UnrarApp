@@ -154,7 +154,9 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
 
     @Subscribe
     public void loadEventReceived(ReloadArchivesEvent event) {
-        loadData();
+        if(isAdded()) {
+            loadData();
+        }
     }
 
     private void reloadListViewWithSubDir(RarArchive rarArchive) {
