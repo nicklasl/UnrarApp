@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
+import java.util.stream.Stream;
 
 import nu.nldv.unroar.model.Completion;
 import nu.nldv.unroar.model.GuessType;
@@ -96,10 +97,12 @@ public class Unrarer {
         return null;
     }
 
-    private File getRarFile(File dir) {
-        Optional<File> firstOption = Arrays.stream(dir.listFiles((f, n) -> n.endsWith(".rar"))).findFirst();
-        assert (firstOption.isPresent());
-        return firstOption.get();
+    private synchronized File getRarFile(File dir) {
+        if(dir.isFile() && dir.getAbsolutePath().endsWith(".rar")) {
+            return dir;
+        }
+        final Stream<File> stream = Arrays.stream(dir.listFiles((f, n) -> n.endsWith(".rar")));
+        return stream.findFirst().orElseThrow(() -> new RuntimeException("Could not find rar file"));
     }
 
 
