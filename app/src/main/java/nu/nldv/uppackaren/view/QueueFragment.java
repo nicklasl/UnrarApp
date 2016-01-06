@@ -66,7 +66,7 @@ public class QueueFragment extends BaseFragment {
     @Subscribe
     public void startFetchingQueue(StartFetchQueueEvent event) {
         handler.removeCallbacks(fetchQueueRunnable);
-        handler.postDelayed(fetchQueueRunnable, 100);
+        handler.postDelayed(fetchQueueRunnable, 1000);
     }
 
     private Runnable fetchQueueRunnable = new Runnable() {
@@ -82,7 +82,7 @@ public class QueueFragment extends BaseFragment {
                         queueAdapter.addAll(queueItems);
                         queueAdapter.notifyDataSetChanged();
                         if (!queueItems.isEmpty()) {
-                            handler.postDelayed(fetchQueueRunnable, 1000);
+                            handler.postDelayed(fetchQueueRunnable, 5000);
                             UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
                         }
                     }

@@ -83,13 +83,13 @@ public class ProgressFragment extends BaseFragment {
                         currentWorkTextView.setText(getString(R.string.current_work, statusResponse.getFileName()));
                         currentWorkProgress.setProgress(statusResponse.getPercentDone());
                     }
-                    handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
+                    handler.postDelayed(fetchStatusAndUpdateProgress, 5000);
                 }
 
                 @Override
                 public void failure(RetrofitError error) {
                     if(retries < 3) {
-                        handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
+                        handler.postDelayed(fetchStatusAndUpdateProgress, 5000);
                     } else {
                         UppackarenApplication.getEventBus().post(new ReloadArchivesEvent());
                         resetCurrentWorkView();
