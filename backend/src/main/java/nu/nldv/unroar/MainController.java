@@ -1,5 +1,7 @@
 package nu.nldv.unroar;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,6 +33,8 @@ import nu.nldv.unroar.model.UnrarStatus;
 @SpringBootApplication
 @Import(UppackarenConfig.class)
 public class MainController {
+
+    private final Logger logger;
 
     @Autowired
     private DirectoriesOnlyFilter directoriesOnlyFilter;
@@ -91,14 +95,24 @@ public class MainController {
         final File currentWorkFile = unrarer.getCurrentWork();
         if (currentWorkFile == null) {
             return ResponseEntity.notFound().build();
-        }
+        } 
         final String filePath = unrarer.guessFile(currentWorkFile, GuessType.PATH);
-        final String fileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
+        final String guessedFileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
+        logger.debug("status - filePath = "+filePath);
+        logger.debug("status - guessedFileName = "+guessedFileName);
         final File newFile = new File(filePath);
         if (newFile.exists()) {
-            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile});
+            logger.debug("status - newFile.exists = "+newFile.exists());
+            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile.getParentFile()});
             final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
-            return new ResponseEntity<>(new UnrarStatus(fileName, (int) (percentDone * 100)), HttpStatus.OK);
+            return new ResponseEntity<>(new UnrarStatus(guessedFileName, (int) (percentDone * 100)), HttpStatus.OK);
+        } else if((new File(newFile.getParentFile().getParent()+File.separator+guessedFileName).exists())) {
+            logger.debug("inside the else if");
+            final File file = new File(newFile.getParentFile().getParent() + File.separator + guessedFileName);
+            logger.debug("status - file.exists = "+file.exists());
+            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{file});
+            final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
+            return new ResponseEntity<>(new UnrarStatus(guessedFileName, (int) (percentDone * 100)), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -186,5 +200,9 @@ public class MainController {
         }
         path = args[0];
         SpringApplication.run(MainController.class, args);
+    }
+
+    public MainController() {
+        logger = LoggerFactory.getLogger(this.getClass());
     }
 }

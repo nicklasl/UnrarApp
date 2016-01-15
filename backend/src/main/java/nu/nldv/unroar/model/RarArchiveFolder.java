@@ -33,6 +33,9 @@ public class RarArchiveFolder {
     }
 
     public static int calculateDirSize(File[] files) {
+        if(files == null) {
+            return 0;
+        }
         double total = 0;
         for (File file : files) {
             double bytes = file.length();
