@@ -3,7 +3,7 @@ package nu.nldv.unroar.model;
 import java.io.File;
 
 import nu.nldv.unroar.filter.NoHiddenFilesFilter;
-import nu.nldv.unroar.util.Md5Hasher;
+import nu.nldv.unroar.util.FileUtils;
 
 public class RarArchiveFolder {
 
@@ -16,35 +16,16 @@ public class RarArchiveFolder {
     private int dirSizeInMB;
 
     public RarArchiveFolder(File dir, boolean subDir) {
-        this.id = constructIdFromFile(dir);
+        this.id = FileUtils.constructIdFromFile(dir);
         this.name = dir.getName();
         File[] files = dir.listFiles(NO_HIDDEN_FILES_FILTER);
-        this.dirSizeInMB = calculateDirSize(files);
+        this.dirSizeInMB = FileUtils.calculateFileSize(files);
         if (files != null) {
             this.numberOfFiles = files.length;
         } else {
             this.numberOfFiles = 0;
         }
         this.hasSubDirs = subDir;
-    }
-
-    public static String constructIdFromFile(File dir) {
-        return Md5Hasher.getInstance().hash(dir.getAbsolutePath());
-    }
-
-    public static int calculateDirSize(File[] files) {
-        if(files == null) {
-            return 0;
-        }
-        double total = 0;
-        for (File file : files) {
-            double bytes = file.length();
-            double kilobytes = (bytes / 1024);
-            double megabytes = (kilobytes / 1024);
-            total += megabytes;
-        }
-
-        return (int) total;
     }
 
     public String getId() {

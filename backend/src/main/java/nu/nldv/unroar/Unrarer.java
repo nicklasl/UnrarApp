@@ -25,6 +25,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Stream;
 
 import nu.nldv.unroar.model.Completion;
+import nu.nldv.unroar.model.CurrentWorkUnit;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 import nu.nldv.unroar.util.Md5Hasher;
@@ -40,7 +41,7 @@ public class Unrarer {
 
     private Logger logger;
     private Queue<QueueItem> queue = new LinkedList<>();
-    private File currentWork = null;
+    private CurrentWorkUnit currentWork = null; //TODO need to rewrite to a "currentWorkUnit" with archive, filename etc. to be able to check status.
 
 
     public Unrarer() {
@@ -73,8 +74,8 @@ public class Unrarer {
             e.printStackTrace();
         }
         if (archive != null && !archive.getFileHeaders().isEmpty()) {
-            setCurrentWork(rarFile);
             final String resultPath = guessResultPath(archive.getFileHeaders().get(0), dir);
+            setCurrentWork(new CurrentWorkUnit(rarFile, new File(resultPath)));
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
                 public void success() {
@@ -179,18 +180,19 @@ public class Unrarer {
     private Runnable peekInQueue = new Runnable() {
         @Override
         public void run() {
-            if (getCurrentWork() != null) {
-                logger.info("Already working on something... checking again soon");
+            final CurrentWorkUnit currentWork = getCurrentWork();
+            if (currentWork != null) {
+                logger.info("Already working on {}... checking again soon", currentWork);
                 cancelFuture();
-                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(2));
+                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(5));
             } else if (!getQueue().isEmpty()) {
-                logger.info("Not working and there is something in queue... starting new work");
                 final QueueItem queueItem = getQueue().poll();
+                logger.info("Not working and there is something in queue... starting new work: {}", queueItem.getDir().getName());
                 unrar(queueItem.getDir());
                 cancelFuture();
                 taskScheduler.schedule(peekInQueue, dateInSeconds(1));
             } else {
-                logger.info("Not working and nothing in queue... time for a nap");
+                logger.info("Not working and nothing in queue... stop polling");
             }
         }
     };
@@ -209,11 +211,11 @@ public class Unrarer {
         return queue;
     }
 
-    public synchronized File getCurrentWork() {
+    public synchronized CurrentWorkUnit getCurrentWork() {
         return currentWork;
     }
 
-    private synchronized void setCurrentWork(File currentWork) {
+    private synchronized void setCurrentWork(CurrentWorkUnit currentWork) {
         this.currentWork = currentWork;
     }
 }

@@ -23,18 +23,20 @@ import java.util.List;
 import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
 import nu.nldv.unroar.filter.NoHiddenFilesFilter;
 import nu.nldv.unroar.filter.RarFileFilter;
+import nu.nldv.unroar.model.CurrentWorkUnit;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 import nu.nldv.unroar.model.RarArchiveFolder;
 import nu.nldv.unroar.model.UnrarResponseObject;
 import nu.nldv.unroar.model.UnrarStatus;
+import nu.nldv.unroar.util.FileUtils;
 
 @Controller
 @SpringBootApplication
 @Import(UppackarenConfig.class)
 public class MainController {
 
-    private final Logger logger;
+    private static final Logger logger;
 
     @Autowired
     private DirectoriesOnlyFilter directoriesOnlyFilter;
@@ -92,29 +94,14 @@ public class MainController {
 
     @RequestMapping(value = "/status", method = RequestMethod.GET)
     public ResponseEntity getUnpackingStatus() throws IOException {
-        final File currentWorkFile = unrarer.getCurrentWork();
-        if (currentWorkFile == null) {
+        final CurrentWorkUnit currentWorkUnit = unrarer.getCurrentWork();
+        if (currentWorkUnit == null || !currentWorkUnit.getUnpackedFile().exists()) {
             return ResponseEntity.notFound().build();
-        } 
-        final String filePath = unrarer.guessFile(currentWorkFile, GuessType.PATH);
-        final String guessedFileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
-        logger.debug("status - filePath = "+filePath);
-        logger.debug("status - guessedFileName = "+guessedFileName);
-        final File newFile = new File(filePath);
-        if (newFile.exists()) {
-            logger.debug("status - newFile.exists = "+newFile.exists());
-            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile.getParentFile()});
-            final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
-            return new ResponseEntity<>(new UnrarStatus(guessedFileName, (int) (percentDone * 100)), HttpStatus.OK);
-        } else if((new File(newFile.getParentFile().getParent()+File.separator+guessedFileName).exists())) {
-            logger.debug("inside the else if");
-            final File file = new File(newFile.getParentFile().getParent() + File.separator + guessedFileName);
-            logger.debug("status - file.exists = "+file.exists());
-            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{file});
-            final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
-            return new ResponseEntity<>(new UnrarStatus(guessedFileName, (int) (percentDone * 100)), HttpStatus.OK);
         } else {
-            return ResponseEntity.notFound().build();
+            final int currentSizeOfFile = FileUtils.calculateFileSize(currentWorkUnit.getUnpackedFile());
+            File containingFolder = currentWorkUnit.getArchiveFile().getParentFile();
+            final float percentDone = (float) currentSizeOfFile / (float) FileUtils.calculateFileSize(containingFolder.listFiles());
+            return new ResponseEntity<>(new UnrarStatus(currentWorkUnit.getUnpackedFile().getName(), (int) (percentDone * 100)), HttpStatus.OK);
         }
     }
 
@@ -174,7 +161,7 @@ public class MainController {
         File[] files = root.listFiles(directoriesOnlyFilter);
         if (files != null) {
             for (File dir : files) {
-                if (RarArchiveFolder.constructIdFromFile(dir).equalsIgnoreCase(id)) {
+                if (FileUtils.constructIdFromFile(dir).equalsIgnoreCase(id)) {
                     result = dir;
                 }
                 if (result == null && hasSubDir(dir)) {
@@ -202,7 +189,11 @@ public class MainController {
         SpringApplication.run(MainController.class, args);
     }
 
+    static {
+        logger = LoggerFactory.getLogger(MainController.class);
+    }
+
     public MainController() {
-        logger = LoggerFactory.getLogger(this.getClass());
+
     }
 }
