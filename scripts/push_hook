@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DEPLOY_DIR=~/uppackaren_deploy
+
+GIT_WORK_TREE="$DEPLOY_DIR" git checkout -f
+
+cd $DEPLOY_DIR
+
+rm *.out # remove old log file
+
+#if pidfile exist. kill pid
+if [ -f uppackaren.pid ]
+  then
+    echo "pidfile exists. Will do: kill -TERM "$(cat uppackaren.pid)
+    kill -TERM $(cat uppackaren.pid)
+fi
+
+nohup java -jar Uppackaren-1.0.jar /home/pi/usb/Downloads > uppackaren.out 2>&1& echo $! > uppackaren.pid #& > uppackaren.pid
+
+echo "End of the line.."
