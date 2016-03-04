@@ -1,13 +1,13 @@
 package nu.nldv.uppackaren.model;
 
 public class UnrarResponse {
-    private int queueId;
+    private String queueId;
 
-    public int getQueueId() {
+    public String getQueueId() {
         return queueId;
     }
 
-    public void setQueueId(int queueId) {
+    public void setQueueId(String queueId) {
         this.queueId = queueId;
     }
 }

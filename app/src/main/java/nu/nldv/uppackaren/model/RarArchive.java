@@ -1,11 +1,14 @@
 package nu.nldv.uppackaren.model;
 
-public class RarArchive {
+import java.io.Serializable;
+
+public class RarArchive implements Serializable{
 
     private String id;
     private String name;
     private int numberOfFiles;
     private int dirSizeInMB;
+    private boolean hasSubDirs;
 
     public String getId() {
         return id;
@@ -37,5 +40,13 @@ public class RarArchive {
 
     public void setDirSizeInMB(int dirSizeInMB) {
         this.dirSizeInMB = dirSizeInMB;
+    }
+
+    public boolean isHasSubDirs() {
+        return hasSubDirs;
+    }
+
+    public void setHasSubDirs(boolean hasSubDirs) {
+        this.hasSubDirs = hasSubDirs;
     }
 }

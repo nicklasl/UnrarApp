@@ -31,18 +31,12 @@ public class ProgressFragment extends BaseFragment {
     TextView currentWorkTextView;
 
     private Handler handler;
+    private int retries = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        UppackarenApplication.getEventBus().register(this);
         handler = new Handler(Looper.getMainLooper());
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        UppackarenApplication.getEventBus().unregister(this);
     }
 
     @Override
@@ -72,6 +66,7 @@ public class ProgressFragment extends BaseFragment {
 
     @Subscribe
     public void startPollingForProgress(StartPollingForProgressEvent event) {
+        retries = 0;
         handler.removeCallbacks(fetchStatusAndUpdateProgress);
         handler.postDelayed(fetchStatusAndUpdateProgress, 500);
     }
@@ -88,13 +83,18 @@ public class ProgressFragment extends BaseFragment {
                         currentWorkTextView.setText(getString(R.string.current_work, statusResponse.getFileName()));
                         currentWorkProgress.setProgress(statusResponse.getPercentDone());
                     }
-                    handler.postDelayed(fetchStatusAndUpdateProgress, 1000);
+                    handler.postDelayed(fetchStatusAndUpdateProgress, 5000);
                 }
 
                 @Override
                 public void failure(RetrofitError error) {
-                    UppackarenApplication.getEventBus().post(new ReloadArchivesEvent());
-                    resetCurrentWorkView();
+                    if(retries < 3) {
+                        handler.postDelayed(fetchStatusAndUpdateProgress, 5000);
+                    } else {
+                        UppackarenApplication.getEventBus().post(new ReloadArchivesEvent());
+                        resetCurrentWorkView();
+                    }
+                    retries ++;
                 }
             });
         }

@@ -12,9 +12,28 @@
         style="@style/Dotted"
         android:text="@string/archives"/>
 
+    <ImageButton
+        android:id="@+id/go_up_imageview"
+        android:layout_below="@+id/archives_heading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:src="@drawable/ic_arrow_back_black_24dp"/>
+
     <ListView
         android:id="@+id/listview"
-        android:layout_below="@+id/archives_heading"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_below="@+id/go_up_imageview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:id="@+id/loader"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Loader"
+        android:layout_centerInParent="true"/>
+
 </RelativeLayout>

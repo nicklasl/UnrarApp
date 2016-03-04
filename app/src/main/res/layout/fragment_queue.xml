@@ -16,4 +16,14 @@
         android:layout_below="@+id/queue_headline"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+
+    <ProgressBar
+        android:id="@+id/loader"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Loader"
+        android:layout_centerInParent="true"/>
+
 </RelativeLayout>

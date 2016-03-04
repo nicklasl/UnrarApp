@@ -17,6 +17,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import nu.nldv.uppackaren.event.ReloadArchivesEvent;
 import nu.nldv.uppackaren.model.QueueItem;
 import nu.nldv.uppackaren.model.RarArchive;
 import nu.nldv.uppackaren.model.StatusResponse;
@@ -37,6 +38,7 @@ import roboguice.inject.InjectView;
 public class MainActivity extends BaseActivity {
 
 
+    private static final String ROOT = "root";
     private Handler handler;
     private ArchivesFragment archivesFragment;
 
@@ -55,6 +57,7 @@ public class MainActivity extends BaseActivity {
         ProgressFragment progressFragment = new ProgressFragment();
         final FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(getFragmentManager().findFragmentByTag(ArchivesFragment.TAG) == null) {
+            fragmentTransaction.addToBackStack(ROOT);
             fragmentTransaction.add(R.id.archive_list_container, archivesFragment, ArchivesFragment.TAG);
         }
         if(getFragmentManager().findFragmentByTag(QueueFragment.TAG) == null){
@@ -77,7 +80,7 @@ public class MainActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_reload) {
-            archivesFragment.loadData();
+            UppackarenApplication.getEventBus().post(new ReloadArchivesEvent());
             return true;
         } else if (id == R.id.action_change_server_uri) {
             setServerUri();
@@ -92,4 +95,23 @@ public class MainActivity extends BaseActivity {
         startActivity(startSearchForServerActivity);
     }
 
+    @Override
+    public void onBackPressed() {
+        final int backStackEntryCount = getFragmentManager().getBackStackEntryCount();
+        if(backStackEntryCount <= 1) {
+            super.onBackPressed();
+        } else {
+            getFragmentManager().popBackStack();
+        }
+
+    }
+
+    public void pushFragment(RarArchive rarArchive) {
+        final ArchivesFragment fragment = ArchivesFragment.newInstance(rarArchive);
+        getFragmentManager()
+                .beginTransaction()
+                .replace(R.id.archive_list_container, fragment)
+                .addToBackStack(rarArchive.getId())
+                .commitAllowingStateLoss();
+    }
 }

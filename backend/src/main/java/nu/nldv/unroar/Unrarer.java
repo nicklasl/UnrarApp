@@ -7,13 +7,10 @@ import com.github.junrar.rarfile.FileHeader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -25,31 +22,33 @@ import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
+import java.util.stream.Stream;
 
 import nu.nldv.unroar.model.Completion;
+import nu.nldv.unroar.model.CurrentWorkUnit;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
+import nu.nldv.unroar.util.Md5Hasher;
 
 @Service
 @Scope(value = "singleton")
 public class Unrarer {
 
-    private final Logger logger;
+    @Autowired
     private TaskScheduler taskScheduler;
+    @Autowired
     private TaskExecutor taskExecutor;
+
+    private Logger logger;
     private Queue<QueueItem> queue = new LinkedList<>();
-    private String unrarPath = MainController.path;
-    private File currentWork = null;
+    private CurrentWorkUnit currentWork = null; //TODO need to rewrite to a "currentWorkUnit" with archive, filename etc. to be able to check status.
 
 
     public Unrarer() {
-        ApplicationContext context = new ClassPathXmlApplicationContext("Spring-Config.xml");
-        taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
-        taskScheduler = (ConcurrentTaskScheduler) context.getBean("taskScheduler");
         logger = LoggerFactory.getLogger(this.getClass());
     }
 
-    public int addFileToUnrarQueue(File dir) {
+    public String addFileToUnrarQueue(File dir) {
         assert (dir != null);
         assert (dir.isDirectory());
         QueueItem queueItem = new QueueItem(dir);
@@ -57,10 +56,10 @@ public class Unrarer {
             logger.info("Adding to queue: " + queueItem);
             getQueue().add(queueItem);
             taskScheduler.schedule(peekInQueue, dateInSeconds(0));
-            return dir.hashCode();
+            return Md5Hasher.getInstance().hash(dir.getAbsolutePath());
         } else {
             logger.info("queue already contains the queueItem: " + queueItem);
-            return -1;
+            return "-1";
         }
 
     }
@@ -74,8 +73,9 @@ public class Unrarer {
         } catch (RarException | IOException e) {
             e.printStackTrace();
         }
-        if (archive != null) {
-            final String resultPath = guessResultPath(archive.getFileHeaders().get(0));
+        if (archive != null && !archive.getFileHeaders().isEmpty()) {
+            final String resultPath = guessResultPath(archive.getFileHeaders().get(0), dir);
+            setCurrentWork(new CurrentWorkUnit(rarFile, new File(resultPath)));
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
                 public void success() {
@@ -90,29 +90,35 @@ public class Unrarer {
                     logger.info("Failed extracting " + resultPath);
                     setCurrentWork(null);
                 }
-            }));
+            }, dir.getParent()));
             return resultPath;
+        } else {
+            logger.error("Failed extracting " + rarFile.getAbsolutePath());
         }
         return null;
     }
 
-    private File getRarFile(File dir) {
-        Optional<File> firstOption = Arrays.stream(dir.listFiles((f, n) -> n.endsWith(".rar"))).findFirst();
-        assert (firstOption.isPresent());
-        return firstOption.get();
+    private synchronized File getRarFile(File dir) {
+        if(dir.isFile() && dir.getAbsolutePath().endsWith(".rar")) {
+            return dir;
+        }
+        final Stream<File> stream = Arrays.stream(dir.listFiles((f, n) -> n.endsWith(".rar")));
+        return stream.findFirst().orElseThrow(() -> new RuntimeException("Could not find rar file"));
     }
 
 
-    private String guessResultPath(FileHeader fh) {
+    private String guessResultPath(FileHeader fh, File dir) {
         if (fh != null) {
+            String unrarPath = dir.getParent();
             File out = new File(unrarPath + File.separator + fh.getFileNameString().trim());
             return out.getAbsolutePath();
         }
         return null;
     }
 
-    private String guessResultFileName(FileHeader fh) {
+    private String guessResultFileName(FileHeader fh, File dir) {
         if (fh != null) {
+            String unrarPath = dir.getParent();
             File out = new File(unrarPath + File.separator + fh.getFileNameString().trim());
             return out.getName();
         }
@@ -128,12 +134,12 @@ public class Unrarer {
         } catch (RarException | IOException e) {
             e.printStackTrace();
         }
-        if (archive != null) {
+        if (archive != null && !archive.getFileHeaders().isEmpty()) {
             switch (type) {
                 case PATH:
-                    return guessResultPath(archive.getFileHeaders().get(0));
+                    return guessResultPath(archive.getFileHeaders().get(0), dir);
                 case NAME:
-                    return guessResultFileName(archive.getFileHeaders().get(0));
+                    return guessResultFileName(archive.getFileHeaders().get(0), dir);
                 default:
                     return null;
             }
@@ -144,10 +150,12 @@ public class Unrarer {
     private class HeavyLifting implements Runnable {
         private final Archive archive;
         private final Completion completion;
+        private final String unrarPath;
 
-        public HeavyLifting(Archive archive, Completion completion) {
+        public HeavyLifting(Archive archive, Completion completion, String unrarPath) {
             this.archive = archive;
             this.completion = completion;
+            this.unrarPath = unrarPath;
         }
 
         @Override
@@ -172,19 +180,19 @@ public class Unrarer {
     private Runnable peekInQueue = new Runnable() {
         @Override
         public void run() {
-            if (getCurrentWork() != null) {
-                logger.info("Already working on something... checking again soon");
+            final CurrentWorkUnit currentWork = getCurrentWork();
+            if (currentWork != null) {
+                logger.info("Already working on {}... checking again soon", currentWork);
                 cancelFuture();
-                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(2));
+                scheduledFuture = taskScheduler.schedule(peekInQueue, dateInSeconds(5));
             } else if (!getQueue().isEmpty()) {
-                logger.info("Not working and there is something in queue... starting new work");
                 final QueueItem queueItem = getQueue().poll();
-                setCurrentWork(queueItem.getDir());
+                logger.info("Not working and there is something in queue... starting new work: {}", queueItem.getDir().getName());
                 unrar(queueItem.getDir());
                 cancelFuture();
                 taskScheduler.schedule(peekInQueue, dateInSeconds(1));
             } else {
-                logger.info("Not working and nothing in queue... time for a nap");
+                logger.info("Not working and nothing in queue... stop polling");
             }
         }
     };
@@ -203,11 +211,11 @@ public class Unrarer {
         return queue;
     }
 
-    public synchronized File getCurrentWork() {
+    public synchronized CurrentWorkUnit getCurrentWork() {
         return currentWork;
     }
 
-    private synchronized void setCurrentWork(File currentWork) {
+    private synchronized void setCurrentWork(CurrentWorkUnit currentWork) {
         this.currentWork = currentWork;
     }
 }

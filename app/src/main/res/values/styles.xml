@@ -34,4 +34,8 @@
         <item name="android:background">@drawable/dotted</item>
     </style>
 
+    <style name="Loader" parent="android:Widget.Material.ProgressBar">
+        <item name="android:indeterminate">true</item>
+    </style>
+
 </resources>

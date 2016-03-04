@@ -33,23 +33,19 @@ public class QueueFragment extends BaseFragment {
 
     private QueueItemArrayAdapter queueAdapter;
     private Handler handler;
+    private View loader;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        UppackarenApplication.getEventBus().register(this);
         handler = new Handler(Looper.getMainLooper());
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        UppackarenApplication.getEventBus().unregister(this);
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_queue, container, false);
+        final View inflate = inflater.inflate(R.layout.fragment_queue, container, false);
+        loader = inflate.findViewById(R.id.loader);
+        return inflate;
     }
 
 
@@ -70,21 +66,23 @@ public class QueueFragment extends BaseFragment {
     @Subscribe
     public void startFetchingQueue(StartFetchQueueEvent event) {
         handler.removeCallbacks(fetchQueueRunnable);
-        handler.postDelayed(fetchQueueRunnable, 100);
+        handler.postDelayed(fetchQueueRunnable, 1000);
     }
 
     private Runnable fetchQueueRunnable = new Runnable() {
         @Override
         public void run() {
+            loader.setVisibility(View.VISIBLE);
             getRestAPI().getQueue(new Callback<List<QueueItem>>() {
                 @Override
                 public void success(List<QueueItem> queueItems, Response response) {
-                    if(isAdded()) {
+                    if (isAdded()) {
+                        loader.setVisibility(View.GONE);
                         queueAdapter.clear();
                         queueAdapter.addAll(queueItems);
                         queueAdapter.notifyDataSetChanged();
                         if (!queueItems.isEmpty()) {
-                            handler.postDelayed(fetchQueueRunnable, 1000);
+                            handler.postDelayed(fetchQueueRunnable, 5000);
                             UppackarenApplication.getEventBus().post(new StartPollingForProgressEvent());
                         }
                     }
@@ -92,7 +90,7 @@ public class QueueFragment extends BaseFragment {
 
                 @Override
                 public void failure(RetrofitError error) {
-
+                    loader.setVisibility(View.GONE);
                 }
             });
         }

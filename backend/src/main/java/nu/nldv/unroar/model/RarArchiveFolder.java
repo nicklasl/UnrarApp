@@ -2,39 +2,30 @@ package nu.nldv.unroar.model;
 
 import java.io.File;
 
+import nu.nldv.unroar.filter.NoHiddenFilesFilter;
+import nu.nldv.unroar.util.FileUtils;
+
 public class RarArchiveFolder {
 
+    private static final NoHiddenFilesFilter NO_HIDDEN_FILES_FILTER = new NoHiddenFilesFilter();
+
+    private final boolean hasSubDirs;
     private String id;
     private String name;
     private int numberOfFiles;
     private int dirSizeInMB;
 
-    public RarArchiveFolder(File dir) {
-        this.id = constructIdFromFile(dir);
+    public RarArchiveFolder(File dir, boolean subDir) {
+        this.id = FileUtils.constructIdFromFile(dir);
         this.name = dir.getName();
-        File[] files = dir.listFiles();
-        this.dirSizeInMB = calculateDirSize(files);
+        File[] files = dir.listFiles(NO_HIDDEN_FILES_FILTER);
+        this.dirSizeInMB = FileUtils.calculateFileSize(files);
         if (files != null) {
             this.numberOfFiles = files.length;
         } else {
             this.numberOfFiles = 0;
         }
-    }
-
-    public static String constructIdFromFile(File dir) {
-        return Integer.toString(dir.getAbsolutePath().hashCode());
-    }
-
-    public static int calculateDirSize(File[] files) {
-        double total = 0;
-        for (File file : files) {
-            double bytes = file.length();
-            double kilobytes = (bytes / 1024);
-            double megabytes = (kilobytes / 1024);
-            total += megabytes;
-        }
-
-        return (int) total;
+        this.hasSubDirs = subDir;
     }
 
     public String getId() {
@@ -67,5 +58,9 @@ public class RarArchiveFolder {
 
     public void setDirSizeInMB(int dirSizeInMB) {
         this.dirSizeInMB = dirSizeInMB;
+    }
+
+    public boolean isHasSubDirs() {
+        return hasSubDirs;
     }
 }

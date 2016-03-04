@@ -17,4 +17,7 @@
     <string name="current_work">Current work: %1$s</string>
     <string name="archives">Archives</string>
     <string name="idle">IDLE</string>
+    <string name="action">Action</string>
+    <string name="unrar">Unrar</string>
+    <string name="navigate">Navigate</string>
 </resources>

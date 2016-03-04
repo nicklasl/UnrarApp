@@ -31,6 +31,11 @@ public class RarArchiveArrayAdapter extends ArrayAdapter<RarArchive> {
         if (item != null) {
             TextView title = (TextView) view.findViewById(R.id.title_textview);
             TextView right = (TextView) view.findViewById(R.id.number_of_files_textview);
+            if(item.isHasSubDirs()) {
+                view.findViewById(R.id.dir_imageview).setVisibility(View.VISIBLE);
+            } else {
+                view.findViewById(R.id.dir_imageview).setVisibility(View.INVISIBLE);
+            }
             title.setText(item.getName());
 
             right.setText("~" + item.getDirSizeInMB() + " MB");

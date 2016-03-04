@@ -1,9 +1,11 @@
 package nu.nldv.unroar;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -13,23 +15,35 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
+import nu.nldv.unroar.filter.NoHiddenFilesFilter;
+import nu.nldv.unroar.filter.RarFileFilter;
+import nu.nldv.unroar.model.CurrentWorkUnit;
 import nu.nldv.unroar.model.GuessType;
 import nu.nldv.unroar.model.QueueItem;
 import nu.nldv.unroar.model.RarArchiveFolder;
 import nu.nldv.unroar.model.UnrarResponseObject;
 import nu.nldv.unroar.model.UnrarStatus;
+import nu.nldv.unroar.util.FileUtils;
 
 @Controller
-@ComponentScan
-@EnableAutoConfiguration
+@SpringBootApplication
+@Import(UppackarenConfig.class)
 public class MainController {
 
+    private static final Logger logger;
+
+    @Autowired
+    private DirectoriesOnlyFilter directoriesOnlyFilter;
+    @Autowired
+    private RarFileFilter rarFileFilter;
+    @Autowired
+    private NoHiddenFilesFilter noHiddenFilesFilter;
     @Autowired
     private Unrarer unrarer;
 
@@ -45,22 +59,73 @@ public class MainController {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     @ResponseBody
     public List<RarArchiveFolder> listRarArchives() throws IOException {
+        File root = new File(path);
+        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFolders(root);
+        return archiveFolders;
+    }
+
+    @RequestMapping(value = "/{pathId}", method = RequestMethod.GET)
+    @ResponseBody
+    public List<RarArchiveFolder> listRarArchives(@PathVariable String pathId) throws IOException {
+        File root = new File(path);
+        final File currentDir = findFileById(pathId, root);
+        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFolders(currentDir);
+        return archiveFolders;
+    }
+
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.POST)
+    public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id) {
+        File root = new File(path);
+        File dir = findFileById(id, root);
+        if (dir == null) {
+            return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
+        }
+
+        String queueId = unrarer.addFileToUnrarQueue(dir);
+        return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/queue", method = RequestMethod.GET)
+    public ResponseEntity<List<QueueItem>> getQueue() {
+        return new ResponseEntity<List<QueueItem>>(new ArrayList<>(unrarer.getQueue()), HttpStatus.OK);
+    }
+
+
+    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    public ResponseEntity getUnpackingStatus() throws IOException {
+        final CurrentWorkUnit currentWorkUnit = unrarer.getCurrentWork();
+        if (currentWorkUnit == null || !currentWorkUnit.getUnpackedFile().exists()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            final int currentSizeOfFile = FileUtils.calculateFileSize(currentWorkUnit.getUnpackedFile());
+            File containingFolder = currentWorkUnit.getArchiveFile().getParentFile();
+            final float percentDone = (float) currentSizeOfFile / (float) FileUtils.calculateFileSize(containingFolder.listFiles());
+            return new ResponseEntity<>(new UnrarStatus(currentWorkUnit.getUnpackedFile().getName(), (int) (percentDone * 100)), HttpStatus.OK);
+        }
+    }
+
+    private List<RarArchiveFolder> constructListOfArchiveFolders(File currentDir) {
         List<RarArchiveFolder> archiveFolders = new ArrayList<>();
-        File currentDir = new File(path);
-        File[] files = currentDir.listFiles();
+        File[] files = currentDir.listFiles(noHiddenFilesFilter);
         if (files != null) {
             for (File dir : files) {
-                if (dir.isDirectory()
-                        && containsRarFiles(dir)
-                        && !alreadyUnpacked(dir, files)
-                        && !inQueue(dir)) {
-                    archiveFolders.add(new RarArchiveFolder(dir));
+                if (!dir.isDirectory()) {
+                    continue;
+                }
+                if (containsRarFiles(dir) && !alreadyUnpacked(dir, files) && !inQueue(dir)) {
+                    archiveFolders.add(new RarArchiveFolder(dir, false));
+                } else if (hasSubDir(dir)) {
+                    archiveFolders.add(new RarArchiveFolder(dir, true));
                 }
             }
         }
-
-
         return archiveFolders;
+    }
+
+    private boolean hasSubDir(File dir) {
+        return dir != null
+                && Arrays.stream(dir.listFiles(directoriesOnlyFilter)).anyMatch((file) -> containsRarFiles(file));
     }
 
     private boolean inQueue(File dir) {
@@ -75,40 +140,6 @@ public class MainController {
         return inQueue || (unrarer.getCurrentWork() != null && unrarer.getCurrentWork().equals(dir));
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.POST)
-    public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id) {
-        File dir = findFileById(id);
-        if (dir == null) {
-            return new ResponseEntity<>(new UnrarResponseObject(0), HttpStatus.NOT_FOUND);
-        }
-
-        int queueId = unrarer.addFileToUnrarQueue(dir);
-        return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/queue", method = RequestMethod.GET)
-    public ResponseEntity<List<QueueItem>> getQueue() {
-        return new ResponseEntity<List<QueueItem>>(new ArrayList<>(unrarer.getQueue()), HttpStatus.OK);
-    }
-
-
-    @RequestMapping(value = "/status", method = RequestMethod.GET)
-    public ResponseEntity getUnpackingStatusForId() throws IOException {
-        final File currentWorkFile = unrarer.getCurrentWork();
-        if (currentWorkFile == null) {
-            return ResponseEntity.notFound().build();
-        }
-        final String filePath = unrarer.guessFile(currentWorkFile, GuessType.PATH);
-        final String fileName = unrarer.guessFile(currentWorkFile, GuessType.NAME);
-        final File newFile = new File(filePath);
-        if (newFile.exists()) {
-            final int currentSizeOfFile = RarArchiveFolder.calculateDirSize(new File[]{newFile});
-            final float percentDone = (float) currentSizeOfFile / (float) RarArchiveFolder.calculateDirSize(currentWorkFile.listFiles());
-            return new ResponseEntity<>(new UnrarStatus(fileName, (int) (percentDone * 100)), HttpStatus.OK);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     private boolean alreadyUnpacked(File dir, File[] files) {
         String unpackedFilePath = unrarer.guessFile(dir, GuessType.PATH);
@@ -125,17 +156,20 @@ public class MainController {
         return false;
     }
 
-    private File findFileById(String id) {
-        File currentDir = new File(path);
-        File[] files = currentDir.listFiles();
+    private File findFileById(String id, File root) {
+        File result = null;
+        File[] files = root.listFiles(directoriesOnlyFilter);
         if (files != null) {
             for (File dir : files) {
-                if (RarArchiveFolder.constructIdFromFile(dir).equalsIgnoreCase(id)) {
-                    return dir;
+                if (FileUtils.constructIdFromFile(dir).equalsIgnoreCase(id)) {
+                    result = dir;
+                }
+                if (result == null && hasSubDir(dir)) {
+                    result = findFileById(id, dir);
                 }
             }
         }
-        return null;
+        return result;
     }
 
 
@@ -143,9 +177,7 @@ public class MainController {
         if (dir == null) {
             return false;
         } else {
-            final FilenameFilter filenameFilter = (f, n) -> n.endsWith(".rar");
-            boolean b = Arrays.stream(dir.listFiles(filenameFilter)).count() > 0;
-            return b;
+            return Arrays.stream(dir.listFiles(rarFileFilter)).count() > 0;
         }
     }
 
@@ -155,5 +187,13 @@ public class MainController {
         }
         path = args[0];
         SpringApplication.run(MainController.class, args);
+    }
+
+    static {
+        logger = LoggerFactory.getLogger(MainController.class);
+    }
+
+    public MainController() {
+
     }
 }
