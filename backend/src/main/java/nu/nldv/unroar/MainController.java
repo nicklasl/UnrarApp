@@ -83,11 +83,14 @@ public class MainController {
         String queueId = unrarer.addFileToUnrarQueue(dir, new Completion(){
             @Override
             public void success() {
-                super.success();
-                logger.info("completionBlock in maincontroller. Should donwload subtitles.");
+                logger.info("Trying to download subtitles.");
                 final String fileName = unrarer.guessFile(dir, GuessType.NAME);
-                taskExecutor.execute(new SubtitleDownloader(fileName, output -> logger.info("SUBTITLEDOWNLOADER", output)));
+                taskExecutor.execute(new SubtitleDownloader(fileName, output -> logger.info(output)));
+            }
 
+            @Override
+            public void fail() {
+                //Ignore
             }
         });
         return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);

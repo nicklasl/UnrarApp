@@ -27,17 +27,22 @@ public class SubtitleDownloader implements Runnable {
     }
 
     private String executeShellCommand(String command) {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
 
         Process process;
         try {
             process = Runtime.getRuntime().exec(command);
             process.waitFor();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = null;
+            if (process.exitValue() == 0) {
+                reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            } else {
+                reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            }
 
-            String line = "";
+            String line;
             while ((line = reader.readLine()) != null) {
-                output.append(line + "\n");
+                output.append(line).append("\n");
             }
             reader.close();
         } catch (Exception e) {

@@ -77,7 +77,6 @@ public class Unrarer {
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
                 public void success() {
-                    super.success();
                     logger.info("Successfully completed extracting " + resultPath);
                     setCurrentWork(null);
                     outsideCompletionBlock.success();
@@ -85,10 +84,8 @@ public class Unrarer {
 
                 @Override
                 public void fail() {
-                    super.fail();
                     logger.info("Failed extracting " + resultPath);
                     setCurrentWork(null);
-
                     outsideCompletionBlock.fail();
                 }
             }, queueItem.getDir().getParent()));
