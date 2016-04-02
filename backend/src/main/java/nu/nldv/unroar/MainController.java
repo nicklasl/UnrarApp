@@ -1,6 +1,10 @@
 package nu.nldv.unroar;
 
+import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
+import nu.nldv.unroar.filter.NoHiddenFilesFilter;
+import nu.nldv.unroar.filter.RarFileFilter;
 import nu.nldv.unroar.model.*;
+import nu.nldv.unroar.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
-import nu.nldv.unroar.filter.NoHiddenFilesFilter;
-import nu.nldv.unroar.filter.RarFileFilter;
-import nu.nldv.unroar.util.FileUtils;
 
 @Controller
 @SpringBootApplication
@@ -80,12 +79,14 @@ public class MainController {
             return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
         }
 
-        String queueId = unrarer.addFileToUnrarQueue(dir, new Completion(){
+        String queueId = unrarer.addFileToUnrarQueue(dir, new Completion() {
             @Override
             public void success() {
-                logger.info("Trying to download subtitles.");
+                final String absolutePath = unrarer.guessFile(dir, GuessType.PATH);
+                final String pathToFile = absolutePath.substring(0, absolutePath.lastIndexOf("/"));
                 final String fileName = unrarer.guessFile(dir, GuessType.NAME);
-                taskExecutor.execute(new SubtitleDownloader(fileName, output -> logger.info(output)));
+                logger.info("Trying to download subtitles for <{}> to folder: <{}>.", fileName, pathToFile);
+                taskExecutor.execute(new SubtitleDownloader(fileName, pathToFile, output -> logger.info(output)));
             }
 
             @Override

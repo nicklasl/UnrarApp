@@ -8,19 +8,21 @@ import java.io.InputStreamReader;
  */
 public class SubtitleDownloader implements Runnable {
 
-    private static final String CMD = "subliminal download -s -p opensubtitles -l en ";
+    private static final String CMD = "subliminal download -s -p opensubtitles -l en -d ";
 
     private final String fileName;
     private final SubtitleDownloaderHandler handler;
+    private final String path;
 
-    public SubtitleDownloader(String fileName, SubtitleDownloaderHandler handler) {
+    public SubtitleDownloader(String fileName, String path, SubtitleDownloaderHandler handler) {
         this.fileName = fileName;
+        this.path = path;
         this.handler = handler;
     }
 
     @Override
     public void run() {
-        String output = executeShellCommand(CMD + fileName);
+        String output = executeShellCommand(CMD + path + " " + fileName);
         if (this.handler != null) {
             handler.handleOutput(output);
         }
