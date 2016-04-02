@@ -1,11 +1,13 @@
 package nu.nldv.unroar;
 
+import nu.nldv.unroar.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -23,12 +25,6 @@ import java.util.List;
 import nu.nldv.unroar.filter.DirectoriesOnlyFilter;
 import nu.nldv.unroar.filter.NoHiddenFilesFilter;
 import nu.nldv.unroar.filter.RarFileFilter;
-import nu.nldv.unroar.model.CurrentWorkUnit;
-import nu.nldv.unroar.model.GuessType;
-import nu.nldv.unroar.model.QueueItem;
-import nu.nldv.unroar.model.RarArchiveFolder;
-import nu.nldv.unroar.model.UnrarResponseObject;
-import nu.nldv.unroar.model.UnrarStatus;
 import nu.nldv.unroar.util.FileUtils;
 
 @Controller
@@ -46,6 +42,8 @@ public class MainController {
     private NoHiddenFilesFilter noHiddenFilesFilter;
     @Autowired
     private Unrarer unrarer;
+    @Autowired
+    private TaskExecutor taskExecutor;
 
     public static String path;
 
@@ -82,7 +80,16 @@ public class MainController {
             return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
         }
 
-        String queueId = unrarer.addFileToUnrarQueue(dir);
+        String queueId = unrarer.addFileToUnrarQueue(dir, new Completion(){
+            @Override
+            public void success() {
+                super.success();
+                logger.info("completionBlock in maincontroller. Should donwload subtitles.");
+                final String fileName = unrarer.guessFile(dir, GuessType.NAME);
+                taskExecutor.execute(new SubtitleDownloader(fileName, output -> logger.info("SUBTITLEDOWNLOADER", output)));
+
+            }
+        });
         return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
     }
 

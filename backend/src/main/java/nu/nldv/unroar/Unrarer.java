@@ -4,7 +4,11 @@ import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
 import com.github.junrar.impl.FileVolumeManager;
 import com.github.junrar.rarfile.FileHeader;
-
+import nu.nldv.unroar.model.Completion;
+import nu.nldv.unroar.model.CurrentWorkUnit;
+import nu.nldv.unroar.model.GuessType;
+import nu.nldv.unroar.model.QueueItem;
+import nu.nldv.unroar.util.Md5Hasher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +23,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Stream;
-
-import nu.nldv.unroar.model.Completion;
-import nu.nldv.unroar.model.CurrentWorkUnit;
-import nu.nldv.unroar.model.GuessType;
-import nu.nldv.unroar.model.QueueItem;
-import nu.nldv.unroar.util.Md5Hasher;
 
 @Service
 @Scope(value = "singleton")
@@ -48,10 +45,10 @@ public class Unrarer {
         logger = LoggerFactory.getLogger(this.getClass());
     }
 
-    public String addFileToUnrarQueue(File dir) {
+    public String addFileToUnrarQueue(File dir, Completion completion) {
         assert (dir != null);
         assert (dir.isDirectory());
-        QueueItem queueItem = new QueueItem(dir);
+        QueueItem queueItem = new QueueItem(dir, completion);
         if (!getQueue().contains(queueItem)) {
             logger.info("Adding to queue: " + queueItem);
             getQueue().add(queueItem);
@@ -64,8 +61,8 @@ public class Unrarer {
 
     }
 
-    private String unrar(File dir) {
-        File rarFile = getRarFile(dir);
+    private String unrar(QueueItem queueItem) {
+        File rarFile = getRarFile(queueItem.getDir());
 
         Archive archive = null;
         try {
@@ -74,14 +71,16 @@ public class Unrarer {
             e.printStackTrace();
         }
         if (archive != null && !archive.getFileHeaders().isEmpty()) {
-            final String resultPath = guessResultPath(archive.getFileHeaders().get(0), dir);
+            final String resultPath = guessResultPath(archive.getFileHeaders().get(0), queueItem.getDir());
             setCurrentWork(new CurrentWorkUnit(rarFile, new File(resultPath)));
+            final Completion outsideCompletionBlock = queueItem.getCompletion();
             taskExecutor.execute(new HeavyLifting(archive, new Completion() {
                 @Override
                 public void success() {
                     super.success();
                     logger.info("Successfully completed extracting " + resultPath);
                     setCurrentWork(null);
+                    outsideCompletionBlock.success();
                 }
 
                 @Override
@@ -89,8 +88,10 @@ public class Unrarer {
                     super.fail();
                     logger.info("Failed extracting " + resultPath);
                     setCurrentWork(null);
+
+                    outsideCompletionBlock.fail();
                 }
-            }, dir.getParent()));
+            }, queueItem.getDir().getParent()));
             return resultPath;
         } else {
             logger.error("Failed extracting " + rarFile.getAbsolutePath());
@@ -99,7 +100,7 @@ public class Unrarer {
     }
 
     private synchronized File getRarFile(File dir) {
-        if(dir.isFile() && dir.getAbsolutePath().endsWith(".rar")) {
+        if (dir.isFile() && dir.getAbsolutePath().endsWith(".rar")) {
             return dir;
         }
         final Stream<File> stream = Arrays.stream(dir.listFiles((f, n) -> n.endsWith(".rar")));
@@ -188,7 +189,7 @@ public class Unrarer {
             } else if (!getQueue().isEmpty()) {
                 final QueueItem queueItem = getQueue().poll();
                 logger.info("Not working and there is something in queue... starting new work: {}", queueItem.getDir().getName());
-                unrar(queueItem.getDir());
+                unrar(queueItem);
                 cancelFuture();
                 taskScheduler.schedule(peekInQueue, dateInSeconds(1));
             } else {
@@ -198,7 +199,7 @@ public class Unrarer {
     };
 
     private void cancelFuture() {
-        if(scheduledFuture != null && !scheduledFuture.isDone()) {
+        if (scheduledFuture != null && !scheduledFuture.isDone()) {
             scheduledFuture.cancel(true);
         }
     }
