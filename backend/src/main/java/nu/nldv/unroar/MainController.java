@@ -15,10 +15,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,21 +69,19 @@ public class MainController {
 
 
     @RequestMapping(value = "/{id}", method = RequestMethod.POST)
-    public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id) {
+    public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id,
+                                                            @RequestParam(value = "downloadSubs", required = false) final boolean downloadSubs) {
         File root = new File(path);
         File dir = findFileById(id, root);
         if (dir == null) {
             return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
         }
-
         String queueId = unrarer.addFileToUnrarQueue(dir, new Completion() {
             @Override
             public void success() {
-                final String absolutePath = unrarer.guessFile(dir, GuessType.PATH);
-                final String pathToFile = absolutePath.substring(0, absolutePath.lastIndexOf("/"));
-                final String fileName = unrarer.guessFile(dir, GuessType.NAME);
-                logger.info("Trying to download subtitles for <{}> to folder: <{}>.", fileName, pathToFile);
-                taskExecutor.execute(new SubtitleDownloader(fileName, pathToFile, output -> logger.info(output)));
+                if (downloadSubs) {
+                    downloadSubtitles(dir);
+                }
             }
 
             @Override
@@ -95,6 +90,14 @@ public class MainController {
             }
         });
         return new ResponseEntity<>(new UnrarResponseObject(queueId), HttpStatus.OK);
+    }
+
+    private void downloadSubtitles(File dir) {
+        final String absolutePath = unrarer.guessFile(dir, GuessType.PATH);
+        final String pathToFile = absolutePath.substring(0, absolutePath.lastIndexOf("/"));
+        final String fileName = unrarer.guessFile(dir, GuessType.NAME);
+        logger.info("Trying to download subtitles for <{}> to folder: <{}>.", fileName, pathToFile);
+        taskExecutor.execute(new SubtitleDownloader(fileName, pathToFile, output -> logger.info(output)));
     }
 
     @RequestMapping(value = "/queue", method = RequestMethod.GET)
