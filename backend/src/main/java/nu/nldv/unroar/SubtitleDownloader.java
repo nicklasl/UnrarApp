@@ -22,6 +22,7 @@ public class SubtitleDownloader implements Runnable {
 
     @Override
     public void run() {
+        //TODO sanitize fileName and path to protect against shell code injection
         String output = executeShellCommand(CMD + path + " " + fileName);
         if (this.handler != null) {
             handler.handleOutput(output);
