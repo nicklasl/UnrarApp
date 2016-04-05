@@ -11,6 +11,7 @@ import retrofit.client.Response;
 import retrofit.http.GET;
 import retrofit.http.POST;
 import retrofit.http.Path;
+import retrofit.http.Query;
 
 public interface RestAPI {
 
@@ -21,7 +22,7 @@ public interface RestAPI {
     void getRarArchives(@Path("id") String id, Callback<List<RarArchive>> callback);
 
     @POST("/{id}")
-    void unRar(@Path("id") String id, Callback<UnrarResponse> callback);
+    void unRar(@Path("id") String id, @Query("downloadSubs") boolean downloadSubs, Callback<UnrarResponse> callback);
 
     @GET("/status")
     void getStatus(Callback<StatusResponse> callback);

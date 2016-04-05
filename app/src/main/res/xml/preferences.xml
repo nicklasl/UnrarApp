@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <Preference
+        android:id="@+id/action_change_server_uri"
+        android:key="change_server_uri_key"
+        android:title="@string/action_server_uri" />
+    <CheckBoxPreference
+        android:id="@+id/action_download_subs"
+        android:defaultValue="false"
+        android:key="download_subs"
+        android:summary="@string/download_subtitles_hint"
+        android:title="@string/action_download_subtitles" />
+</PreferenceScreen>
