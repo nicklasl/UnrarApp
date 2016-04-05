@@ -1,12 +1,8 @@
 package nu.nldv.unroar.model;
 
-public abstract class Completion {
+public interface Completion {
 
-    public void success() {
+    void success();
 
-    }
-
-    public void fail() {
-
-    }
+    void fail();
 }

@@ -7,31 +7,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.Toast;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import nu.nldv.uppackaren.event.ReloadArchivesEvent;
-import nu.nldv.uppackaren.model.QueueItem;
 import nu.nldv.uppackaren.model.RarArchive;
-import nu.nldv.uppackaren.model.StatusResponse;
-import nu.nldv.uppackaren.model.UnrarResponse;
-import nu.nldv.uppackaren.util.QueueItemArrayAdapter;
-import nu.nldv.uppackaren.util.RarArchiveArrayAdapter;
 import nu.nldv.uppackaren.view.ArchivesFragment;
 import nu.nldv.uppackaren.view.ProgressFragment;
 import nu.nldv.uppackaren.view.QueueFragment;
-import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 import roboguice.inject.ContentView;
-import roboguice.inject.InjectView;
 
 
 @ContentView(R.layout.activity_main)
@@ -82,9 +64,8 @@ public class MainActivity extends BaseActivity {
         if (id == R.id.action_reload) {
             UppackarenApplication.getEventBus().post(new ReloadArchivesEvent());
             return true;
-        } else if (id == R.id.action_change_server_uri) {
-            setServerUri();
-            return true;
+        } else if(id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
         }
 
         return super.onOptionsItemSelected(item);

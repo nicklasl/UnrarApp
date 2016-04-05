@@ -5,28 +5,26 @@ import java.io.File;
 import nu.nldv.unroar.util.Md5Hasher;
 
 public class QueueItem {
-    private String id;
-    private File dir;
+    private final Completion completion;
+    private final String id;
+    private final File dir;
 
-    public QueueItem(File dir) {
+    public QueueItem(File dir, Completion completion) {
         this.id = Md5Hasher.getInstance().hash(dir.getAbsolutePath());
         this.dir = dir;
+        this.completion = completion;
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public File getDir() {
         return dir;
     }
 
-    public void setDir(File dir) {
-        this.dir = dir;
+    public Completion getCompletion() {
+        return completion;
     }
 
     @Override

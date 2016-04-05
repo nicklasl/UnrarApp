@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import nu.nldv.uppackaren.BaseActivity;
 import nu.nldv.uppackaren.MainActivity;
 import nu.nldv.uppackaren.R;
 import nu.nldv.uppackaren.UppackarenApplication;
@@ -172,7 +173,8 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
     }
 
     private void initiateUnrar(final RarArchive rarArchive, final int position) {
-        getRestAPI().unRar(rarArchive.getId(), new Callback<UnrarResponse>() {
+        boolean downloadSubs = getDownloadSubsValue();
+        getRestAPI().unRar(rarArchive.getId(), downloadSubs, new Callback<UnrarResponse>() {
             @Override
             public void success(UnrarResponse unrarResponse, Response response) {
                 if (isAdded()) {
@@ -189,6 +191,10 @@ public class ArchivesFragment extends BaseFragment implements AdapterView.OnItem
                 Toast.makeText(getActivity(), "Failed to unrar", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private boolean getDownloadSubsValue() {
+        return ((BaseActivity) getActivity()).sharedPrefs().getBoolean("download_subs", false);
     }
 
 }

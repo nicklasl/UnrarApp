@@ -1,6 +1,7 @@
 package nu.nldv.uppackaren;
 
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import nu.nldv.uppackaren.util.RestAPI;
 import roboguice.activity.RoboActivity;
@@ -10,8 +11,9 @@ public class BaseActivity extends RoboActivity {
         return ((UppackarenApplication) getApplication()).restApi();
     }
 
-    protected SharedPreferences sharedPrefs() {
-        return getSharedPreferences(UppackarenApplication.UPPACKAREN, MODE_PRIVATE);
+    public SharedPreferences sharedPrefs() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        return preferences;
     }
 
     protected boolean serverUriIsSet() {
