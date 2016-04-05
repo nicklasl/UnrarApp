@@ -72,7 +72,7 @@ public class MainController {
     public ResponseEntity<UnrarResponseObject> unRarArchive(@PathVariable final String id,
                                                             @RequestParam(value = "downloadSubs", required = false) final boolean downloadSubs) {
         File root = new File(path);
-        File dir = findFileById(id, root);
+        final File dir = findFileById(id, root);
         if (dir == null) {
             return new ResponseEntity<>(new UnrarResponseObject("0"), HttpStatus.NOT_FOUND);
         }
