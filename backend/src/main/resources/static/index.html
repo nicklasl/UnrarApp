@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="./bower_components/bootstrap-css-only/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="./unrar.css/"/>
+</head>
+<body ng-app="myApp">
+<div class="container" ng-controller="AppController">
+    <div class="page-header">
+        <h1>UnrarApp</h1>
+    </div>
+    <div class="alert alert-info" role="alert" ng-hide="archives && archives.length > 0">
+        There are no archives to unrar.
+    </div>
+    <div ng-repeat="archive in archives" class="row hoverDiv" ng-click="handleClick(archive)">
+        <div class="col-xs-8">
+            <span class="glyphicon glyphicon-folder-open" ng-show="archive.hasSubDirs">&nbsp;</span>
+            <span class="glyphicon glyphicon-gift" ng-hide="archive.hasSubDirs">&nbsp;</span>
+            {{archive.name}}
+        </div>
+        <div class="col-xs-2">
+            <span ng-hide="archive.hasSubDirs">{{archive.numberOfFiles}} files</span>
+        </div>
+        <div class="col-xs-2">
+            ~{{archive.dirSizeInMB}} MB
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="./bower_components/angular/angular.min.js"></script>
+<script type="text/javascript" src="./bower_components/angular-resource/angular-resource.min.js"></script>
+<script type="text/javascript" src="./app/app.js"></script>
+<script type="text/javascript" src="./app/controllers.js"></script>
+<script type="text/javascript" src="./app/services.js"></script>
+</body>
+</html>

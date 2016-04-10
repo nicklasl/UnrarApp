@@ -23,9 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Controller
-@SpringBootApplication
-@Import(UppackarenConfig.class)
+@RestController
+@RequestMapping("/api")
 public class MainController {
 
     private static final Logger logger;
@@ -41,30 +40,25 @@ public class MainController {
     @Autowired
     private TaskExecutor taskExecutor;
 
-    public static String path;
+    public static String path = Application.path;
 
 
     @RequestMapping(value = "/info", method = RequestMethod.GET)
-    @ResponseBody
     public String getInfo() {
         return "System.currentTimeMillis = " + System.currentTimeMillis();
     }
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
-    @ResponseBody
     public List<RarArchiveFolder> listRarArchives() throws IOException {
         File root = new File(path);
-        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFolders(root);
-        return archiveFolders;
+        return constructListOfArchiveFolders(root);
     }
 
     @RequestMapping(value = "/{pathId}", method = RequestMethod.GET)
-    @ResponseBody
     public List<RarArchiveFolder> listRarArchives(@PathVariable String pathId) throws IOException {
         File root = new File(path);
         final File currentDir = findFileById(pathId, root);
-        List<RarArchiveFolder> archiveFolders = constructListOfArchiveFolders(currentDir);
-        return archiveFolders;
+        return constructListOfArchiveFolders(currentDir);
     }
 
 
@@ -195,13 +189,6 @@ public class MainController {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        if (args == null || args.length == 0) {
-            throw new IllegalArgumentException("Need to supply a directory when starting.");
-        }
-        path = args[0];
-        SpringApplication.run(MainController.class, args);
-    }
 
     static {
         logger = LoggerFactory.getLogger(MainController.class);

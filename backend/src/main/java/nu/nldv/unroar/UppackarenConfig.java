@@ -4,9 +4,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 @Configuration
-public class UppackarenConfig {
+public class UppackarenConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public ConcurrentTaskScheduler taskScheduler() {
@@ -20,5 +22,11 @@ public class UppackarenConfig {
         threadPoolTaskExecutor.setMaxPoolSize(10);
         threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return threadPoolTaskExecutor;
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addRedirectViewController("/api", "/api/")
+                .setKeepQueryParams(true);
     }
 }
