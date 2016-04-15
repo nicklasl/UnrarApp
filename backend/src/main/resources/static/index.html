@@ -12,6 +12,11 @@
     <div class="alert alert-info" role="alert" ng-hide="archives && archives.length > 0">
         There are no archives to unrar.
     </div>
+    <div class="row hoverDiv" ng-click="up" ng-show="navigationStack && navigationStack.length > 0"/>
+        <div class="col-xs-8">
+            <span class="glyphicon glyphicon-level-up">&nbsp;</span>
+        </div>
+    </div>
     <div ng-repeat="archive in archives" class="row hoverDiv" ng-click="handleClick(archive)">
         <div class="col-xs-8">
             <span class="glyphicon glyphicon-folder-open" ng-show="archive.hasSubDirs">&nbsp;</span>

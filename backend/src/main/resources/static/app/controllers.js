@@ -15,11 +15,18 @@
 
     function navigate(folder) {
         console.log("item is a folder. navigate!");
+        $scope.navigationStack.push(folder.id);
+        Archive.query({id:folder.id}, function(response) {
+            console.log(response);
+            $scope.archives = response ? response : [];
+        });
     }
 
     function unrar(archive) {
         console.log("item is an archive. unrar!")
     }
+
+    $scope.navigationStack = [];
 
 //    $scope.addItem = function(description) {
 //      new Item({

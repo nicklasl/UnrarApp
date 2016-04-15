@@ -1,2 +1,5 @@
 .hoverDiv {background: #fff;}
-.hoverDiv:hover {background: #f5f5f5;}
+.hoverDiv:hover {
+    background: #f5f5f5;
+    cursor: pointer;
+}
