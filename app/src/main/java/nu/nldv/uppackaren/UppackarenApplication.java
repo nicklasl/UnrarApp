@@ -24,14 +24,17 @@ public class UppackarenApplication extends Application {
 
     public static RestAPI restApi() {
         if (restApiInstance == null) {
-            RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setEndpoint(getEndPoint())
-                    .setLogLevel(RestAdapter.LogLevel.BASIC)
-                    .build();
-
-            restApiInstance = restAdapter.create(RestAPI.class);
+            restApiInstance = restAPIForEndPoint(getEndPoint());
         }
         return restApiInstance;
+    }
+
+    public static RestAPI restAPIForEndPoint(String endpoint) {
+        RestAdapter restAdapter = new RestAdapter.Builder()
+                .setEndpoint(endpoint.concat("/api"))
+                .setLogLevel(RestAdapter.LogLevel.BASIC)
+                .build();
+        return restAdapter.create(RestAPI.class);
     }
 
     private static String getEndPoint() {

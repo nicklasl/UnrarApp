@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import nu.nldv.uppackaren.UppackarenApplication;
 import nu.nldv.uppackaren.model.Server;
-import retrofit.RestAdapter;
 
 public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
 
@@ -57,13 +57,11 @@ public class ServerScanner extends AsyncTask<Integer, Integer, List<Server>> {
     }
 
     private void checkHostSupport(Integer port, Map<Integer, Server> supportedServers, String reacheableHost) {
-        RestAdapter restAdapter = new RestAdapter.Builder()
-                .setEndpoint("http://" + reacheableHost + ":" + port)
-                .setLogLevel(RestAdapter.LogLevel.NONE)
-                .build();
+
+        RestAPI restAPI = UppackarenApplication.restAPIForEndPoint("http://"+reacheableHost+":"+port);
         try {
-            restAdapter.create(RestAPI.class).getInfoSynchronous();
-            Log.d(TAG, reacheableHost + ":" + port + " is supported");
+            restAPI.getInfoSynchronous();
+            Log.i(TAG, reacheableHost + ":" + port + " is supported");
             Server server = new Server(reacheableHost, port);
             supportedServers.put(server.hashCode(), server);
         } catch (Exception e) {
