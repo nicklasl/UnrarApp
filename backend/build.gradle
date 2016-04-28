@@ -11,7 +11,7 @@ fatJar {
     baseName = 'Uppackaren'
     version =  '1.0'
     manifest {
-        attributes 'Main-Class': 'nu.nldv.unroar.MainController'
+        attributes 'Main-Class': 'nu.nldv.unroar.Application'
     }
 }
 
